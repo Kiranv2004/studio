@@ -22,7 +22,9 @@ COPY --from=deps /repo/node_modules        ./node_modules
 COPY --from=deps /repo/apps/web/node_modules ./apps/web/node_modules
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY apps/web ./apps/web
-RUN cd apps/web && pnpm build
+# `mkdir -p public` ensures the runtime COPY succeeds even if no static
+# assets are committed (Next.js itself treats public/ as optional).
+RUN cd apps/web && pnpm build && mkdir -p public
 
 # ---------- runtime ----------
 FROM node:22-alpine AS runtime
