@@ -429,10 +429,42 @@ theming via CSS variables** (see §4.2 Brand theming).
 ### Sheets
 Outbox worker drains every 5s, exponential backoff, dies after 8 attempts.
 
-## 9. Open questions / followups parking lot
+## 9. Production deploy (single EC2)
+
+All deploy config lives in [`deploy/`](../deploy/). Single Ubuntu box,
+Docker Compose, no CI/CD, no image registry. The runbook is
+[`deploy/README.md`](../deploy/README.md). Day-to-day: SSH in, `bash
+deploy/deploy.sh`. That's it.
+
+| File | What |
+|---|---|
+| `deploy/api.Dockerfile` | Multi-stage Go → distroless. Bundles `server`, `seed`, `goose`. |
+| `deploy/web.Dockerfile` | Multi-stage Node → Next.js standalone runtime. |
+| `deploy/docker-compose.yml` | postgres + api + web + nginx + one-shot `migrate`/`seed` (in `tools` profile). |
+| `deploy/nginx/default.conf` | `/api/*` → api:8080, `/*` → web:3000. Same-origin to the browser. |
+| `deploy/setup-ec2.sh` | One-time bootstrap: docker, swap, dirs. |
+| `deploy/deploy.sh` | git pull → build → migrate → seed → up. |
+| `deploy/backup.sh` | Nightly `pg_dump` (cron). |
+| `deploy/.env.example` | Production env template (real `deploy/.env` is gitignored). |
+
+**Architecture invariants for deploys (enforce when changing):**
+- Browser only ever talks to nginx on the box (port 80 today, 443 later).
+  All `/api/*` calls are same-origin → same code as local dev.
+- The api container has zero shell (distroless). For debugging use
+  `docker compose logs` or run an alpine sidecar.
+- Migrations run *before* the new api container takes traffic
+  (`docker compose run --rm migrate` in `deploy.sh`). Schema-and-code
+  changes ship atomically.
+- Seed is idempotent — re-runs every deploy to keep the super-admin password
+  in sync with `.env`. Don't break the idempotency.
+- Next.js config has `output: 'standalone'` + `outputFileTracingRoot`.
+  Don't remove these — the runtime image depends on them being on.
+
+## 10. Open questions / followups parking lot
 
 (Append here when something comes up that we deferred. Clear when resolved.)
 
-- [ ] Production hosting target (Vercel + Fly.io? Single AWS account?)
-- [ ] Domain for public lead-capture links
+- [ ] Domain + TLS (currently HTTP-only on the EC2 IP)
+- [ ] CI/CD (currently manual `bash deploy/deploy.sh` on the box)
+- [ ] Backups → S3 (currently local-disk only)
 - [ ] L2 scope kickoff: multi-vendor, lead status workflow polish, channel integrations

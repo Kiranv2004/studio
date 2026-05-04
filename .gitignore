@@ -6,6 +6,11 @@ secrets/
 *.pem
 *.key
 
+# Production deploy state — created on the EC2 box, never committed
+deploy/.env
+deploy/secrets/
+deploy/backups/
+
 # Node
 node_modules/
 .next/
