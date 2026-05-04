@@ -1,0 +1,152 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
+	"github.com/google/uuid"
+
+	"github.com/projectx/api/internal/identity"
+	"github.com/projectx/api/internal/integrations/sheets"
+	"github.com/projectx/api/internal/leads"
+	"github.com/projectx/api/internal/platform/config"
+	"github.com/projectx/api/internal/platform/db"
+	"github.com/projectx/api/internal/platform/httpx"
+	"github.com/projectx/api/internal/platform/logger"
+	"github.com/projectx/api/internal/studios"
+)
+
+func main() {
+	cfg, err := config.Load()
+	if err != nil {
+		os.Stderr.WriteString("config: " + err.Error() + "\n")
+		os.Exit(1)
+	}
+	log := logger.New(cfg.LogLevel)
+
+	rootCtx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
+	pool, err := db.Connect(rootCtx, cfg.DB.DSN())
+	if err != nil {
+		log.Error("db connect", "err", err)
+		os.Exit(1)
+	}
+	defer pool.Close()
+
+	// --- repos / services / handlers ---
+	identityRepo := identity.NewRepo(pool)
+	leadsRepo := leads.NewRepo(pool)
+	studiosRepo := studios.NewRepo(pool)
+
+	tokens := identity.NewTokenIssuer(cfg.JWT.Secret, cfg.JWT.TTL)
+
+	studiosSvc := studios.NewService(studiosRepo, identityRepo)
+	studiosHandler := studios.NewHandler(studiosSvc)
+
+	// Identity needs to enrich /me + /login responses with the user's studio
+	// brand info. Wire studios in via a callback to keep the import direction one-way.
+	brandLookup := identity.StudioBrandLookup(func(ctx context.Context, id uuid.UUID) (*identity.StudioBrand, error) {
+		s, err := studiosSvc.GetByID(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		return &identity.StudioBrand{
+			Slug:       s.Slug,
+			Name:       s.Name,
+			BrandColor: s.BrandColor,
+			LogoURL:    s.LogoURL,
+		}, nil
+	})
+	identityHandler := identity.NewHandler(identityRepo, tokens, cfg.Cookie, brandLookup)
+
+	leadsSvc := leads.NewService(leadsRepo)
+	leadsHandler := leads.NewHandler(leadsSvc, cfg)
+
+	sheetsClient, err := sheets.NewClient(rootCtx, cfg.Sheets.CredentialsPath, cfg.Sheets.SpreadsheetID, cfg.Sheets.Tab)
+	if err != nil {
+		log.Error("sheets init failed — leads will queue in outbox until fixed", "err", err)
+	}
+	sheetsWorker := sheets.NewWorker(leadsRepo, sheetsClient, log.With("component", "sheets_worker"))
+	go sheetsWorker.Run(rootCtx)
+
+	// --- router ---
+	r := chi.NewRouter()
+	r.Use(httpx.RequestID)
+	r.Use(httpx.Recoverer(log))
+	r.Use(httpx.AccessLog(log))
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   cfg.CORSOrigins,
+		AllowedMethods:   []string{"GET", "POST", "PATCH", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Content-Type", "Authorization", "X-Request-ID"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
+
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		httpx.JSON(w, http.StatusOK, map[string]string{"status": "ok"})
+	})
+
+	r.Route("/api/v1", func(r chi.Router) {
+		identityHandler.Routes(r)
+
+		// Public, unauthenticated endpoints
+		studiosHandler.PublicRoutes(r)
+		leadsHandler.PublicRoutes(r)
+
+		// Authenticated
+		r.Group(func(r chi.Router) {
+			r.Use(identityHandler.RequireAuth)
+
+			// Super-admin only: studio CRUD + create-with-admin
+			r.Route("/admin", func(r chi.Router) {
+				studiosHandler.AdminRoutes(r)
+			})
+
+			// Any authenticated user: read/update OWN studio (studio_admin) or
+			// any studio (super_admin). Path: /me/studios/{id}.
+			r.Route("/me", func(r chi.Router) {
+				studiosHandler.SelfRoutes(r)
+			})
+
+			// Studio-scoped campaigns + leads. Path: /studios/{studioId}/...
+			// Authorization is per-handler via resolveStudioID.
+			r.Route("/studios/{studioId}", func(r chi.Router) {
+				leadsHandler.AdminRoutes(r)
+			})
+		})
+	})
+
+	srv := &http.Server{
+		Addr:              cfg.HTTPAddr,
+		Handler:           r,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       120 * time.Second,
+	}
+
+	go func() {
+		log.Info("api listening", "addr", cfg.HTTPAddr, "env", cfg.Env, "sheets_enabled", sheetsClient != nil)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Error("listen", "err", err)
+			cancel()
+		}
+	}()
+
+	<-rootCtx.Done()
+	log.Info("shutdown initiated")
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer shutdownCancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Error("shutdown", "err", err)
+	}
+	log.Info("bye")
+}

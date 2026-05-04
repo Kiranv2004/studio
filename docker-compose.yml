@@ -1,0 +1,23 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: projectx-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-projectx}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-projectx_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-projectx}
+    ports:
+      # 5432 is taken by a native Postgres; 5433 by the ibms-postgres container.
+      # Use 5434 for Project-X to avoid both.
+      - "${POSTGRES_PORT:-5434}:5432"
+    volumes:
+      - projectx_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-projectx} -d ${POSTGRES_DB:-projectx}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  projectx_pg_data:

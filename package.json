@@ -1,0 +1,20 @@
+{
+  "name": "projectx",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@9.10.0",
+  "scripts": {
+    "dev": "pnpm --filter @projectx/web dev",
+    "build": "pnpm --filter @projectx/web build",
+    "lint": "pnpm --filter @projectx/web lint",
+    "type-check": "pnpm --filter @projectx/web type-check"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "prettier": "^3.3.3",
+    "prettier-plugin-tailwindcss": "^0.6.6"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

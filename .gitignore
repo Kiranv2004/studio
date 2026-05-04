@@ -1,0 +1,32 @@
+# Env / secrets
+.env
+.env.local
+.env.*.local
+secrets/
+*.pem
+*.key
+
+# Node
+node_modules/
+.next/
+.turbo/
+dist/
+build/
+*.tsbuildinfo
+.pnpm-store/
+
+# Go
+apps/api/bin/
+apps/api/tmp/
+*.test
+*.out
+coverage.txt
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Docker volumes (if mounted locally)
+.docker-data/
