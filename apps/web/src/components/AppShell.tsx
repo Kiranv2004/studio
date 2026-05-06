@@ -7,6 +7,7 @@ import {
   Home,
   Inbox,
   KanbanSquare,
+  Lock,
   LogOut,
   Megaphone,
   Menu,
@@ -53,6 +54,8 @@ function navItemsFor(me: Me): NavItem[] {
 export function AppShell({ me, children }: { me: Me; children: ReactNode }) {
   const isStudio = me.role === 'studio_admin' && !!me.studio;
   const brand = isStudio ? me.studio!.brandColor : '#7c3aed';
+
+  // All hooks must run unconditionally — keep them above the lockout branch.
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -77,6 +80,13 @@ export function AppShell({ me, children }: { me: Me; children: ReactNode }) {
     ['--brand-softer' as string]: withAlpha(brand, 0.16),
     ['--brand-onbrand' as string]: '#ffffff',
   };
+
+  // Studio-admin of an inactive studio: full-screen lockout. The backend
+  // also 403s every studio-scoped endpoint with `studio_inactive`; this is
+  // the matching UX wrapper. Super-admin always sees the normal shell.
+  if (isStudio && me.studio!.active === false) {
+    return <StudioInactiveScreen me={me} />;
+  }
 
   return (
     <div
@@ -165,14 +175,14 @@ function Sidebar({
         </div>
       ) : (
         <div className="mb-7 flex items-center gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-primary to-brand-700 text-sm font-bold text-white shadow-sm">
-            PX
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-brand-300 via-brand-primary to-brand-700 text-sm font-extrabold text-white shadow-sm ring-1 ring-white/20">
+            1H
           </div>
           <div className="min-w-0">
-            <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              Project-X
+            <div className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">
+              1herosocial.ai
             </div>
-            <div className="text-[11px] text-slate-500">Platform admin</div>
+            <div className="text-[11px] font-medium text-slate-500">Platform admin</div>
           </div>
         </div>
       )}
@@ -255,5 +265,45 @@ function Topbar({ me, onMenuClick }: { me: Me; onMenuClick: () => void }) {
         </Button>
       </div>
     </header>
+  );
+}
+
+// Full-screen lockout for studio-admins whose studio has been deactivated.
+// Mirrors the backend 403 — they can sign out, but cannot navigate anywhere
+// in the admin. Super-admins never see this (their AppShell branch skips it).
+function StudioInactiveScreen({ me }: { me: Me }) {
+  const router = useRouter();
+  const studio = me.studio!;
+
+  async function logout() {
+    try {
+      await api('/api/v1/auth/logout', { method: 'POST' });
+    } finally {
+      router.push('/login');
+      router.refresh();
+    }
+  }
+
+  return (
+    <main className="grid min-h-screen place-items-center bg-slate-50 px-4 dark:bg-slate-950">
+      <div className="w-full max-w-md text-center">
+        <div className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-slate-900/5 text-slate-500 dark:bg-slate-50/5 dark:text-slate-400">
+          <Lock className="h-6 w-6" />
+        </div>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+          {studio.name} is inactive
+        </h1>
+        <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+          The platform admin has paused this studio. You can&rsquo;t access campaigns,
+          leads, or settings until it&rsquo;s reactivated. Reach out to your platform
+          admin if you think this is a mistake.
+        </p>
+        <div className="mt-8">
+          <Button variant="outline" onClick={logout} leftIcon={<LogOut className="h-4 w-4" />}>
+            Sign out
+          </Button>
+        </div>
+      </div>
+    </main>
   );
 }

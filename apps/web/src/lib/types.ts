@@ -5,6 +5,7 @@ export interface StudioBrand {
   name: string;
   brandColor: string;
   logoUrl: string;
+  active: boolean;
 }
 
 export interface Me {

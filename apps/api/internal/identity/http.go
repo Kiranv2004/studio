@@ -23,12 +23,14 @@ type Handler struct {
 }
 
 // StudioBrand is a minimal projection of the studio table — just enough for
-// the frontend to render branded chrome immediately after login.
+// the frontend to render branded chrome immediately after login. The `Active`
+// flag drives the inactive-studio lockout in the AppShell.
 type StudioBrand struct {
 	Slug       string `json:"slug"`
 	Name       string `json:"name"`
 	BrandColor string `json:"brandColor"`
 	LogoURL    string `json:"logoUrl"`
+	Active     bool   `json:"active"`
 }
 
 // StudioBrandLookup resolves a studio's brand info by id. Implemented in main

@@ -129,6 +129,14 @@ domain code doesn't.
   super_admins). Authorization is done via `Claims.EffectiveStudioID(...)` and
   `resolveStudioID(...)` middleware — super-admins act on the studio in the URL,
   studio-admins MUST match their own. Fail closed: 403 if mismatch.
+- **Inactive-studio lockout.** Every studio-scoped route group is wrapped in
+  `studiosHandler.RequireActiveStudio` (in `cmd/server/main.go`). When a
+  super-admin marks a studio inactive, every API call from that studio's
+  admins returns 403 with `code: "studio_inactive"`. Super-admins bypass the
+  middleware so they can still manage / reactivate. The `/me` endpoint
+  itself stays open (so the frontend can read `studio.active=false` and
+  render the lockout screen). Don't add new studio-scoped routes outside
+  this middleware group.
 - **Slugs are unique per-studio**, not globally. Two studios can both use
   `spring-promo`. Constraint: `UNIQUE (studio_id, slug)` on `campaigns`.
 - **Public endpoints are explicitly marked.** Default is auth-required. The
@@ -187,6 +195,23 @@ platform login and a few super-admin-only pieces (the platform sidebar block,
 hero sections on `/login`).
 
 #### Pages / data
+- **Mutations use Server Actions, not client `fetch`.** A bare client-side
+  `fetch` + `router.back()` doesn't invalidate Next.js's RSC data cache,
+  so the destination can render stale data (we hit this on the pipeline
+  page). Use a Server Action co-located with the page (`actions.ts`) that:
+  1. Forwards the auth cookie to the Go API
+  2. On success, calls `revalidatePath(...)` for **every** page that shows
+     the changed data (pipeline, leads list, dashboard, lead detail, etc.)
+  3. Returns a discriminated-union result (`{ ok: true } | { ok: false,
+     error, details? }`) — never throws, so the client component renders
+     errors cleanly.
+  Examples to mirror: `app/admin/studios/[studioId]/leads/[id]/actions.ts`
+  and `.../settings/actions.ts`.
+- **Save → back navigation.** After the action returns ok, navigate back
+  to wherever the user came from with `router.back()` (fall back to a
+  sensible parent if `window.history.length <= 1`). No `router.refresh()`
+  needed — `revalidatePath` already invalidated the destination's cache.
+  Don't leave users sitting on the detail page with a "Saved" toast.
 - **Server Components by default**, Client Components only when you need state
   or effects. The lead form is a Client Component; the admin lead table is RSC
   with a small Client island for filters.

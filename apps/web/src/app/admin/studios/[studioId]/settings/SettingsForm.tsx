@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { FieldError, FieldHint, Label } from '@/components/ui/Label';
-import { ApiError, api } from '@/lib/api';
 import type { Studio } from '@/lib/types';
+import { updateStudioSettings } from './actions';
 
 export function SettingsForm({ studio }: { studio: Studio }) {
   const router = useRouter();
@@ -18,22 +18,30 @@ export function SettingsForm({ studio }: { studio: Studio }) {
   const [active, setActive] = useState(studio.active);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  const [savedAt, setSavedAt] = useState<Date | null>(null);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setErrors({});
     setSaving(true);
     try {
-      await api(`/api/v1/me/studios/${studio.id}`, {
-        method: 'PATCH',
-        json: { name, brandColor, logoUrl, contactEmail, active },
+      const result = await updateStudioSettings(studio.id, studio.slug, {
+        name,
+        brandColor,
+        logoUrl,
+        contactEmail,
+        active,
       });
-      setSavedAt(new Date());
-      router.refresh();
-    } catch (err) {
-      if (err instanceof ApiError && err.details) setErrors(err.details);
-      else setErrors({ _: 'failed to save' });
+      if (!result.ok) {
+        setErrors(result.details ?? { _: result.error });
+        return;
+      }
+      // The Server Action revalidated the studio overview / studios list /
+      // public form for this slug — no manual refresh needed on return.
+      if (typeof window !== 'undefined' && window.history.length > 1) {
+        router.back();
+      } else {
+        router.push(`/admin/studios/${studio.id}`);
+      }
     } finally {
       setSaving(false);
     }
@@ -113,11 +121,11 @@ export function SettingsForm({ studio }: { studio: Studio }) {
 
             <FieldError message={errors._} />
 
-            <div className="flex items-center justify-between border-t border-slate-100 pt-5 dark:border-slate-800/60">
-              <span className="text-xs text-slate-500 dark:text-slate-400">
-                {savedAt ? `Saved ${savedAt.toLocaleTimeString()}` : 'Changes apply to new public form loads.'}
-              </span>
-              <Button type="submit" loading={saving}>Save changes</Button>
+            <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-5 dark:border-slate-800/60">
+              <Button variant="ghost" type="button" onClick={() => router.back()}>
+                Cancel
+              </Button>
+              <Button type="submit" loading={saving}>Save & back</Button>
             </div>
           </form>
         </Card>

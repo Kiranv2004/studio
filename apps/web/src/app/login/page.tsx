@@ -73,10 +73,10 @@ export default function LoginPage() {
           />
           <div className="relative">
             <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 via-brand-primary to-brand-700 text-sm font-bold text-white shadow-xl">
-                PX
+              <div className="grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-brand-300 via-brand-primary to-brand-700 text-sm font-extrabold text-white shadow-xl ring-1 ring-white/20">
+                1H
               </div>
-              <div className="text-base font-semibold tracking-tight">Project-X</div>
+              <div className="text-base font-bold tracking-tight">1herosocial.ai</div>
             </div>
 
             <h1 className="mt-16 max-w-2xl text-4xl font-semibold leading-[1.05] tracking-tight md:text-5xl xl:text-6xl">
@@ -101,10 +101,10 @@ export default function LoginPage() {
           <div className="w-full max-w-md">
             {/* Mobile-only logo header */}
             <div className="mb-6 flex items-center gap-3 lg:hidden">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand-400 via-brand-primary to-brand-700 text-sm font-bold text-white shadow-sm">
-                PX
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand-300 via-brand-primary to-brand-700 text-sm font-extrabold text-white shadow-sm ring-1 ring-white/20">
+                1H
               </div>
-              <div className="text-sm font-semibold tracking-tight">Project-X</div>
+              <div className="text-sm font-bold tracking-tight">1herosocial.ai</div>
             </div>
 
             <div className="mb-8">

@@ -63,6 +63,7 @@ func main() {
 			Name:       s.Name,
 			BrandColor: s.BrandColor,
 			LogoURL:    s.LogoURL,
+			Active:     s.Active,
 		}, nil
 	})
 	identityHandler := identity.NewHandler(identityRepo, tokens, cfg.Cookie, brandLookup)
@@ -112,13 +113,17 @@ func main() {
 
 			// Any authenticated user: read/update OWN studio (studio_admin) or
 			// any studio (super_admin). Path: /me/studios/{id}.
+			// Studio-admins of inactive studios are blocked here too (super passes through).
 			r.Route("/me", func(r chi.Router) {
+				r.Use(studiosHandler.RequireActiveStudio)
 				studiosHandler.SelfRoutes(r)
 			})
 
 			// Studio-scoped campaigns + leads. Path: /studios/{studioId}/...
-			// Authorization is per-handler via resolveStudioID.
+			// Authorization is per-handler via resolveStudioID; the middleware
+			// gates against inactive studios for non-super-admins.
 			r.Route("/studios/{studioId}", func(r chi.Router) {
+				r.Use(studiosHandler.RequireActiveStudio)
 				leadsHandler.AdminRoutes(r)
 			})
 		})

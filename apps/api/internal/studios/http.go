@@ -40,6 +40,36 @@ func (h *Handler) PublicRoutes(r chi.Router) {
 	r.Get("/public/studios/{slug}", h.publicGet)
 }
 
+// RequireActiveStudio blocks studio_admins whose studio has been marked
+// inactive by a super admin. Super admins always pass through (so they can
+// access an inactive studio in order to reactivate it). Returns a structured
+// `studio_inactive` error so the frontend can render a clean lockout screen
+// rather than a generic 403.
+func (h *Handler) RequireActiveStudio(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c := identity.MustClaims(r.Context())
+		if c.IsSuper() {
+			next.ServeHTTP(w, r)
+			return
+		}
+		if c.StudioID == nil {
+			httpx.WriteError(w, http.StatusForbidden, "forbidden", "no studio bound to this user")
+			return
+		}
+		s, err := h.svc.GetByID(r.Context(), *c.StudioID)
+		if err != nil {
+			httpx.WriteError(w, http.StatusForbidden, "forbidden", "studio not accessible")
+			return
+		}
+		if !s.Active {
+			httpx.WriteError(w, http.StatusForbidden, "studio_inactive",
+				"this studio has been deactivated by the platform admin")
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 // ----- super-admin handlers -----
 
 type createReq struct {

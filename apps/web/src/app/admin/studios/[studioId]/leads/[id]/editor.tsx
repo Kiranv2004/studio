@@ -4,30 +4,38 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { Label } from '@/components/ui/Label';
+import { FieldError, Label } from '@/components/ui/Label';
 import { Select } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
-import { api } from '@/lib/api';
 import { LEAD_STATUSES, LEAD_STATUS_LABELS, type Lead, type LeadStatus } from '@/lib/types';
+import { updateLeadStatus } from './actions';
 
 export function LeadEditor({ studioId, lead }: { studioId: string; lead: Lead }) {
   const router = useRouter();
   const [status, setStatus] = useState<LeadStatus>(lead.status);
   const [notes, setNotes] = useState(lead.notes);
   const [saving, setSaving] = useState(false);
-  const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const dirty = status !== lead.status || notes !== lead.notes;
 
   async function save() {
     setSaving(true);
+    setError(null);
     try {
-      await api(`/api/v1/studios/${studioId}/leads/${lead.id}`, {
-        method: 'PATCH',
-        json: { status, notes },
-      });
-      setSavedAt(new Date());
-      router.refresh();
+      const result = await updateLeadStatus(studioId, lead.id, { status, notes });
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      // The Server Action revalidated the destination's RSC cache, so the
+      // pipeline / leads list / dashboard will all show the new status
+      // without a manual refresh.
+      if (typeof window !== 'undefined' && window.history.length > 1) {
+        router.back();
+      } else {
+        router.push(`/admin/studios/${studioId}/leads`);
+      }
     } finally {
       setSaving(false);
     }
@@ -60,12 +68,13 @@ export function LeadEditor({ studioId, lead }: { studioId: string; lead: Lead })
             placeholder="Call notes, next steps, blockers…"
           />
         </div>
-        <div className="flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800/60">
-          <span className="text-xs text-slate-500 dark:text-slate-400">
-            {savedAt ? `Saved ${savedAt.toLocaleTimeString()}` : 'Changes are not auto-saved.'}
-          </span>
+        <FieldError message={error ?? undefined} />
+        <div className="flex items-center justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800/60">
+          <Button variant="ghost" size="sm" type="button" onClick={() => router.back()}>
+            Cancel
+          </Button>
           <Button onClick={save} disabled={!dirty} loading={saving} size="sm">
-            Save
+            Save & back
           </Button>
         </div>
       </div>

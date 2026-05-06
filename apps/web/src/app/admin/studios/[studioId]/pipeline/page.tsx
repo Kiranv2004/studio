@@ -1,10 +1,10 @@
 import Link from 'next/link';
-import { ArrowRight, Inbox } from 'lucide-react';
-import { Badge } from '@/components/ui/Badge';
+import { ArrowRight, Inbox, MessageSquareText } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { serverFetch } from '@/lib/auth';
+import { brandInitials } from '@/lib/color';
 import { cn } from '@/lib/cn';
 import type { Lead, LeadStatus } from '@/lib/types';
 import { LEAD_STATUSES, LEAD_STATUS_LABELS } from '@/lib/types';
@@ -23,11 +23,26 @@ const COLUMN_CAP = 50; // leads shown per column
 
 const COLUMN_COLORS: Record<LeadStatus, string> = {
   new:          '#0ea5e9',
-  contacted:    'var(--brand, #7c3aed)',
+  contacted:    '#7c3aed',
   trial_booked: '#f59e0b',
   member:       '#10b981',
   dropped:      '#94a3b8',
 };
+
+// Avatar palette — picked deterministically from the lead's name so the
+// same person always gets the same color across visits.
+const AVATAR_PALETTE = [
+  '#0ea5e9', '#6366f1', '#7c3aed', '#a855f7', '#ec4899',
+  '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6',
+];
+
+function avatarColor(seed: string): string {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) {
+    h = ((h << 5) - h + seed.charCodeAt(i)) | 0;
+  }
+  return AVATAR_PALETTE[Math.abs(h) % AVATAR_PALETTE.length]!;
+}
 
 export default async function PipelinePage({
   params,
@@ -36,9 +51,9 @@ export default async function PipelinePage({
 }) {
   const { studioId } = await params;
 
-  // One stats call for column counts, plus one list call per status — capped
-  // small enough that this is fast even with thousands of leads. Each column
-  // links to the full filtered list when it overflows.
+  // One stats call for column counts + one list call per status. Capped
+  // small enough that this is fast even with thousands of leads. Each
+  // column links to the full filtered list when it overflows.
   const [stats, ...buckets] = await Promise.all([
     serverFetch<LeadStats>(`/api/v1/studios/${studioId}/leads/stats`),
     ...LEAD_STATUSES.map((s) =>
@@ -56,11 +71,34 @@ export default async function PipelinePage({
     {} as Record<LeadStatus, Lead[]>,
   );
 
+  const activeCount =
+    (stats.byStatus.new ?? 0) +
+    (stats.byStatus.contacted ?? 0) +
+    (stats.byStatus.trial_booked ?? 0);
+  const memberCount = stats.byStatus.member ?? 0;
+  const conversionPct =
+    stats.total > 0 ? Math.round((memberCount / stats.total) * 100) : 0;
+
   return (
     <>
       <PageHeader
         title="Pipeline"
-        description="Every lead, grouped by where they are in the funnel. Click a card to update status or add notes."
+        description={
+          <>
+            <span className="font-medium text-slate-700 dark:text-slate-200">
+              {stats.total}
+            </span>{' '}
+            leads ·{' '}
+            <span className="font-medium text-slate-700 dark:text-slate-200">
+              {activeCount}
+            </span>{' '}
+            active ·{' '}
+            <span className="font-medium text-slate-700 dark:text-slate-200">
+              {conversionPct}%
+            </span>{' '}
+            converted to members
+          </>
+        }
       />
 
       {stats.total === 0 ? (
@@ -73,8 +111,8 @@ export default async function PipelinePage({
         </Card>
       ) : (
         // Horizontal scroll on small screens; 5-column grid on xl+.
-        <div className="-mx-4 overflow-x-auto px-4 sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10">
-          <div className="grid min-w-[1100px] grid-cols-5 gap-4 xl:min-w-0">
+        <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10">
+          <div className="grid min-w-[1180px] grid-cols-5 gap-4 xl:min-w-0">
             {LEAD_STATUSES.map((status) => (
               <PipelineColumn
                 key={status}
@@ -103,83 +141,125 @@ function PipelineColumn({
   studioId: string;
 }) {
   const overflow = count - leads.length;
+  const color = COLUMN_COLORS[status];
+
   return (
-    <div className="flex flex-col rounded-2xl border border-slate-200 bg-slate-50/60 dark:border-slate-800 dark:bg-slate-900/40">
-      {/* Column header */}
-      <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-800">
+    <section
+      className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-card ring-1 ring-slate-200 dark:bg-slate-950 dark:ring-slate-800"
+      aria-label={LEAD_STATUS_LABELS[status]}
+    >
+      {/* Color bar across the top — gives each column an instant visual
+          identity even before you read the header. */}
+      <div className="h-1.5" style={{ background: color }} aria-hidden />
+
+      {/* Header */}
+      <header className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <span
             aria-hidden
             className="h-2 w-2 rounded-full"
-            style={{ background: COLUMN_COLORS[status] }}
+            style={{ background: color, boxShadow: `0 0 0 3px ${color}1a` }}
           />
-          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
             {LEAD_STATUS_LABELS[status]}
-          </span>
+          </h3>
         </div>
-        <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium tabular-nums text-slate-700 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:ring-slate-700">
+        <span
+          className="rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums"
+          style={{ background: `${color}1a`, color }}
+        >
           {count}
         </span>
-      </div>
+      </header>
 
-      {/* Card stack */}
-      <div className="flex flex-1 flex-col gap-2 p-3">
+      {/* Card stack — subtle column tint differentiates from the white cards inside */}
+      <div className="flex flex-1 flex-col gap-2 bg-slate-50/60 p-3 dark:bg-slate-900/40">
         {leads.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-slate-200 px-3 py-6 text-center text-xs text-slate-400 dark:border-slate-800">
-            No leads
+          <div
+            className="rounded-xl border border-dashed px-3 py-8 text-center text-xs"
+            style={{
+              borderColor: `${color}33`,
+              color: '#64748b',
+              background: `${color}05`,
+            }}
+          >
+            No leads in this stage
           </div>
         ) : (
-          leads.map((l) => <LeadCard key={l.id} lead={l} studioId={studioId} />)
+          leads.map((l) => (
+            <LeadCard key={l.id} lead={l} studioId={studioId} accent={color} />
+          ))
         )}
         {overflow > 0 && (
           <Link
             href={`/admin/studios/${studioId}/leads?status=${status}`}
-            className="mt-1 inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:border-[color:var(--brand,#7c3aed)] hover:text-[color:var(--brand,#7c3aed)] dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300"
+            className="mt-1 inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition-colors hover:border-[color:var(--brand,#7c3aed)] hover:text-[color:var(--brand,#7c3aed)] dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300"
           >
             +{overflow} more
             <ArrowRight className="h-3 w-3" />
           </Link>
         )}
       </div>
-    </div>
+    </section>
   );
 }
 
-function LeadCard({ lead, studioId }: { lead: Lead; studioId: string }) {
+function LeadCard({
+  lead,
+  studioId,
+  accent,
+}: {
+  lead: Lead;
+  studioId: string;
+  accent: string;
+}) {
+  const av = avatarColor(lead.name);
   return (
     <Link
       href={`/admin/studios/${studioId}/leads/${lead.id}`}
       className={cn(
-        'group block rounded-lg border border-slate-200 bg-white p-3 shadow-sm transition-all',
-        'hover:-translate-y-0.5 hover:border-[color:var(--brand,#7c3aed)] hover:shadow-card-hover',
-        'dark:border-slate-800 dark:bg-slate-950',
+        'group block rounded-xl bg-white p-3.5 shadow-sm ring-1 ring-slate-200 transition-all',
+        'hover:-translate-y-0.5 hover:shadow-card-hover',
+        'dark:bg-slate-950 dark:ring-slate-800',
       )}
+      style={{ ['--card-accent' as string]: accent }}
     >
-      <div className="flex items-start justify-between gap-2">
+      {/* Top row: avatar + name + email */}
+      <div className="flex items-center gap-2.5">
+        <span
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-xs font-semibold text-white shadow-sm"
+          style={{ background: av }}
+          aria-hidden
+        >
+          {brandInitials(lead.name)}
+        </span>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
+          <div className="truncate text-sm font-semibold leading-tight text-slate-900 dark:text-slate-100">
             {lead.name}
           </div>
-          <div className="truncate text-xs text-slate-500 dark:text-slate-400">
+          <div className="truncate text-[11px] leading-tight text-slate-500 dark:text-slate-400">
             {lead.email}
           </div>
         </div>
-        <Badge tone="neutral" className="shrink-0">
-          {lead.fitnessPlan}
-        </Badge>
       </div>
 
-      <div className="mt-2.5 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-        <span>{relativeTime(lead.createdAt)}</span>
-        {lead.notes && (
-          <span
-            className="truncate text-slate-400"
-            title={lead.notes}
-          >
-            📝 {firstLine(lead.notes)}
-          </span>
-        )}
+      {/* Middle row: plan chip + time */}
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <span className="inline-flex items-center gap-1 truncate rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+          {lead.fitnessPlan}
+        </span>
+        <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-slate-400">
+          {relativeTime(lead.createdAt)}
+        </span>
       </div>
+
+      {/* Notes preview — only when present */}
+      {lead.notes && (
+        <div className="mt-3 flex items-start gap-1.5 border-t border-slate-100 pt-2.5 text-[11px] leading-snug text-slate-500 dark:border-slate-800 dark:text-slate-400">
+          <MessageSquareText className="mt-px h-3 w-3 shrink-0 text-slate-400" />
+          <span className="line-clamp-2">{firstLines(lead.notes)}</span>
+        </div>
+      )}
     </Link>
   );
 }
@@ -196,7 +276,7 @@ function relativeTime(iso: string): string {
   return new Date(iso).toLocaleDateString();
 }
 
-function firstLine(s: string): string {
-  const line = s.split('\n')[0] ?? '';
-  return line.length > 32 ? line.slice(0, 31) + '…' : line;
+function firstLines(s: string): string {
+  const lines = s.split('\n').filter(Boolean).slice(0, 2);
+  return lines.join(' · ');
 }

@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Project-X',
-  description: 'AI-run marketing & studio operations platform',
+  title: '1herosocial.ai',
+  description: 'AI-run marketing & studio operations platform for fitness studios.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
