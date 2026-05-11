@@ -26,6 +26,25 @@ type Config struct {
 	PublicFormBaseURL string
 
 	Sheets SheetsConfig
+
+	// Encryption key for at-rest secrets (channel access tokens). 32-byte
+	// AES-256 key, base64-encoded. Generate with: openssl rand -base64 32
+	TokenEncryptionKey string
+
+	// Meta App credentials (single platform-wide app; each studio brings its
+	// own WABA + access token via the Channels page).
+	Meta MetaConfig
+}
+
+type MetaConfig struct {
+	AppID              string
+	AppSecret          string
+	WebhookVerifyToken string
+	GraphAPIVersion    string // e.g. "v21.0"
+}
+
+func (m MetaConfig) Enabled() bool {
+	return m.AppSecret != "" && m.WebhookVerifyToken != ""
 }
 
 type DBConfig struct {
@@ -114,6 +133,13 @@ func Load() (Config, error) {
 			SpreadsheetID:   getEnv("GOOGLE_SHEETS_ID", ""),
 			Tab:             getEnv("GOOGLE_SHEETS_TAB", "Leads"),
 		},
+		TokenEncryptionKey: getEnv("TOKEN_ENCRYPTION_KEY", ""),
+		Meta: MetaConfig{
+			AppID:              getEnv("META_APP_ID", ""),
+			AppSecret:          getEnv("META_APP_SECRET", ""),
+			WebhookVerifyToken: getEnv("META_WEBHOOK_VERIFY_TOKEN", ""),
+			GraphAPIVersion:    getEnv("META_GRAPH_API_VERSION", "v21.0"),
+		},
 	}
 
 	if len(cfg.JWT.Secret) < 32 {
@@ -121,6 +147,9 @@ func Load() (Config, error) {
 	}
 	if cfg.DB.Password == "" {
 		return cfg, errors.New("POSTGRES_PASSWORD is required")
+	}
+	if cfg.TokenEncryptionKey == "" {
+		return cfg, errors.New("TOKEN_ENCRYPTION_KEY is required (generate with `openssl rand -base64 32`)")
 	}
 	return cfg, nil
 }

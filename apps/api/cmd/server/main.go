@@ -16,10 +16,13 @@ import (
 	"github.com/projectx/api/internal/identity"
 	"github.com/projectx/api/internal/integrations/sheets"
 	"github.com/projectx/api/internal/leads"
+	"github.com/projectx/api/internal/messaging"
+	"github.com/projectx/api/internal/messaging/channels"
 	"github.com/projectx/api/internal/platform/config"
 	"github.com/projectx/api/internal/platform/db"
 	"github.com/projectx/api/internal/platform/httpx"
 	"github.com/projectx/api/internal/platform/logger"
+	"github.com/projectx/api/internal/platform/secrets"
 	"github.com/projectx/api/internal/studios"
 )
 
@@ -78,6 +81,26 @@ func main() {
 	sheetsWorker := sheets.NewWorker(leadsRepo, sheetsClient, log.With("component", "sheets_worker"))
 	go sheetsWorker.Run(rootCtx)
 
+	// --- messaging (channels + inbox) ---
+	cipher, err := secrets.New(cfg.TokenEncryptionKey)
+	if err != nil {
+		log.Error("token encryption init", "err", err)
+		os.Exit(1)
+	}
+	msgRepo := messaging.NewRepo(pool, cipher)
+	msgBus := messaging.NewInProcBus()
+	msgSvc := messaging.NewService(msgRepo, msgBus)
+	msgHandler := messaging.NewHandler(msgSvc, msgBus)
+
+	whatsappClient := channels.NewMetaWhatsApp(cfg.Meta.GraphAPIVersion)
+	msgWorker := messaging.NewOutboundWorker(msgRepo, msgBus, whatsappClient,
+		log.With("component", "messaging_worker"))
+	go msgWorker.Run(rootCtx)
+
+	metaWebhook := messaging.NewMetaWebhookHandler(msgSvc,
+		cfg.Meta.WebhookVerifyToken, cfg.Meta.AppSecret,
+		log.With("component", "meta_webhook"))
+
 	// --- router ---
 	r := chi.NewRouter()
 	r.Use(httpx.RequestID)
@@ -102,6 +125,10 @@ func main() {
 		studiosHandler.PublicRoutes(r)
 		leadsHandler.PublicRoutes(r)
 
+		// Meta webhook (verified by signature, never auth-cookied)
+		r.Get("/webhooks/meta/whatsapp", metaWebhook.Verify)
+		r.Post("/webhooks/meta/whatsapp", metaWebhook.Receive)
+
 		// Authenticated
 		r.Group(func(r chi.Router) {
 			r.Use(identityHandler.RequireAuth)
@@ -119,12 +146,15 @@ func main() {
 				studiosHandler.SelfRoutes(r)
 			})
 
-			// Studio-scoped campaigns + leads. Path: /studios/{studioId}/...
+			// Studio-scoped campaigns + leads + messaging. Path: /studios/{studioId}/...
 			// Authorization is per-handler via resolveStudioID; the middleware
 			// gates against inactive studios for non-super-admins.
 			r.Route("/studios/{studioId}", func(r chi.Router) {
 				r.Use(studiosHandler.RequireActiveStudio)
 				leadsHandler.AdminRoutes(r)
+				r.Route("/messaging", func(r chi.Router) {
+					msgHandler.AdminRoutes(r)
+				})
 			})
 		})
 	})

@@ -257,6 +257,20 @@ hero sections on `/login`).
   separate folder from `components/ui/` so it's clear which are domain
   visualizations vs. generic primitives.
 
+#### Date / time formatting (no hydration footguns)
+- **Never call `toLocaleDateString()` / `toLocaleTimeString()` /
+  `toLocaleString()` without an explicit locale arg.** The server (Next.js
+  Node process) and the user's browser have different defaults — same
+  `new Date()` renders as `07/05/2026` on the server and `5/7/2026` on the
+  client → React hydration mismatch. Use `formatDate` / `formatDateTime` /
+  `formatTime` from `@/lib/datetime` — they pin `'en-GB'` so output is
+  identical everywhere.
+- **`Date.now()` in render is also a hydration trap** (it advances between
+  SSR and hydration). For relative timestamps ("5m ago") use
+  `relativeTime()` from `@/lib/datetime` AND wrap the rendering element
+  with `suppressHydrationWarning` — the difference is bounded by SSR
+  latency and React tolerates it silently.
+
 #### Mobile responsive (every page)
 - **Layout**: mobile-first. The `AppShell` sidebar is a fixed-position drawer
   on `<lg`, slides in via `translate-x` toggled from a hamburger button in the
@@ -453,6 +467,47 @@ theming via CSS variables** (see §4.2 Brand theming).
 
 ### Sheets
 Outbox worker drains every 5s, exponential backoff, dies after 8 attempts.
+
+### Messaging (Inbox + Channels) — `internal/messaging/`
+
+Per-studio multi-channel inbox with WhatsApp wired today and the data model
+ready for IG / Messenger / X. **Direct Meta WhatsApp Cloud API**, no BSP.
+
+| Surface | Endpoints |
+|---|---|
+| Public webhook | `GET/POST /api/v1/webhooks/meta/whatsapp` (verify + receive) |
+| Studio-scoped REST | `/api/v1/studios/:id/messaging/channels` (GET/POST/DELETE)<br>`/conversations` (GET, list+filter)<br>`/conversations/:id` (GET)<br>`/conversations/:id/messages` (GET, POST, paginated)<br>`/conversations/:id/read` (POST)<br>`/stream` (SSE — live updates) |
+
+**Architecture invariants for messaging (don't break):**
+- **Outbound goes through one path**: `outbound_jobs` → worker → `Sender`
+  interface → channel adapter. Manual reply, automation (phase D), AI
+  auto-send (phase E) all hit the same dispatcher. Don't add a second path.
+- **Channel adapters take primitives, not domain types** — keeps `channels`
+  package decoupled from `messaging` (no import cycle). The `Sender` signature
+  is `SendText(ctx, accessToken, channelExternalID, recipient, body)`.
+- **Identity stitching is per studio**: `contact_identities (studio_id, kind,
+  value)` is unique; same person across channels = one row per channel,
+  optionally linked to one `lead_id`.
+- **Tokens encrypted at rest** via `internal/platform/secrets` (AES-256-GCM
+  from `TOKEN_ENCRYPTION_KEY`). Decrypt only in repo methods that need it
+  (`GetChannelByID`, `GetChannelByExternalID`); list endpoints leave it
+  empty.
+- **Events bus** (`messaging.Bus`, in-process) is the seam for SSE today and
+  automations + AI tomorrow. Add subscribers, never wiring. When we
+  multi-replica, swap the impl for Postgres LISTEN/NOTIFY — interface stays.
+- **Phase D + E tables already exist** (`message_templates`,
+  `automation_rules`, `automation_runs`, `ai_suggestions`,
+  `message_analyses`). Schema is locked; just add writers when those phases
+  ship.
+- **Inbound is idempotent**: `messages.UNIQUE (conversation_id, external_id)`
+  collapses Meta's webhook retries.
+- See [`docs/SETUP_META_WHATSAPP.md`](SETUP_META_WHATSAPP.md) for the
+  one-time Meta App setup + per-studio onboarding.
+- **Adding more channels (Instagram / Messenger / X)** — the plan is in
+  [`docs/MESSAGING_NEXT_CHANNELS.md`](MESSAGING_NEXT_CHANNELS.md). Don't
+  start until WhatsApp has been validated with a real studio for a couple
+  of weeks; the doc explains why and lists per-channel work, scopes, and
+  gotchas.
 
 ## 9. Production deploy (single EC2)
 

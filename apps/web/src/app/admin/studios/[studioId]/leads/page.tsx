@@ -6,6 +6,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Pagination } from '@/components/ui/Pagination';
 import { serverFetch } from '@/lib/auth';
+import { formatDateTime } from '@/lib/datetime';
 import type { Lead, LeadStatus } from '@/lib/types';
 import { LEAD_STATUSES, LEAD_STATUS_LABELS } from '@/lib/types';
 import { LeadFilters } from './LeadFilters';
@@ -111,7 +112,7 @@ export default async function LeadsPage({
                         <Badge tone={statusTone[l.status]}>{LEAD_STATUS_LABELS[l.status]}</Badge>
                       </td>
                       <td className="px-6 py-3.5 text-slate-500 dark:text-slate-400">
-                        {new Date(l.createdAt).toLocaleString()}
+                        {formatDateTime(l.createdAt)}
                       </td>
                     </tr>
                   ))}

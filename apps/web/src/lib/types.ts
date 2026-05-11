@@ -84,3 +84,79 @@ export interface Lead {
   createdAt: string;
   updatedAt: string;
 }
+
+// ===== Messaging =====
+
+export type ChannelKind = 'whatsapp_meta' | 'instagram_meta' | 'messenger_meta' | 'x_dm';
+
+export type ChannelStatus = 'active' | 'paused' | 'disconnected' | 'error';
+
+export interface ChannelAccount {
+  id: string;
+  studioId: string;
+  kind: ChannelKind;
+  bsp: string;
+  externalId: string;
+  parentId: string;
+  displayHandle: string;
+  status: ChannelStatus;
+  lastError?: string;
+  connectedAt: string;
+  disconnectedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ConversationStatus = 'open' | 'snoozed' | 'closed';
+
+export type Direction = 'inbound' | 'outbound';
+export type SourceKind = 'customer' | 'studio_user' | 'automation' | 'ai';
+export type MessageStatus = 'pending' | 'sent' | 'delivered' | 'read' | 'failed';
+
+export interface Conversation {
+  id: string;
+  studioId: string;
+  channelAccountId: string;
+  channelKind: ChannelKind;
+  channelHandle?: string;
+  contactIdentityId: string;
+  contactDisplayName: string;
+  contactValue: string;
+  externalThreadId: string;
+  leadId?: string;
+  status: ConversationStatus;
+  assignedTo?: string;
+  unreadCount: number;
+  lastMessageAt: string;
+  lastMessagePreview: string;
+  lastMessageDirection?: Direction;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Attachment {
+  type: string;
+  url?: string;
+  mime?: string;
+  name?: string;
+}
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  studioId: string;
+  direction: Direction;
+  sourceKind: SourceKind;
+  sourceUserId?: string;
+  sourceRef?: string;
+  body: string;
+  attachments?: Attachment[];
+  externalId?: string;
+  inReplyTo?: string;
+  status: MessageStatus;
+  failureReason?: string;
+  sentAt: string;
+  deliveredAt?: string;
+  readAt?: string;
+  createdAt: string;
+}

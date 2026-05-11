@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { serverFetch } from '@/lib/auth';
 import { brandInitials } from '@/lib/color';
 import { cn } from '@/lib/cn';
+import { relativeTime } from '@/lib/datetime';
 import type { Lead, LeadStatus } from '@/lib/types';
 import { LEAD_STATUSES, LEAD_STATUS_LABELS } from '@/lib/types';
 
@@ -248,7 +249,10 @@ function LeadCard({
         <span className="inline-flex items-center gap-1 truncate rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">
           {lead.fitnessPlan}
         </span>
-        <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-slate-400">
+        <span
+          className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-slate-400"
+          suppressHydrationWarning
+        >
           {relativeTime(lead.createdAt)}
         </span>
       </div>
@@ -262,18 +266,6 @@ function LeadCard({
       )}
     </Link>
   );
-}
-
-function relativeTime(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  if (d < 30) return `${d}d ago`;
-  return new Date(iso).toLocaleDateString();
 }
 
 function firstLines(s: string): string {

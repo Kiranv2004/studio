@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { serverFetch } from '@/lib/auth';
+import { formatDate, formatDateTime } from '@/lib/datetime';
 import type { Campaign, Lead } from '@/lib/types';
 import { CopyLink } from '../CopyLink';
 import { CampaignActions } from './actions';
@@ -37,7 +38,7 @@ export default async function CampaignDetailPage({
           <>
             <span className="font-mono text-xs text-slate-400">/{c.slug}</span>
             <span className="mx-2 text-slate-300">·</span>
-            Created {new Date(c.createdAt).toLocaleDateString()}
+            Created {formatDate(c.createdAt)}
           </>
         }
         actions={<CampaignActions studioId={studioId} id={c.id} active={c.active} />}
@@ -80,7 +81,7 @@ export default async function CampaignDetailPage({
               <div className="flex items-center justify-between">
                 <dt className="text-slate-500 dark:text-slate-400">Created</dt>
                 <dd className="text-slate-700 dark:text-slate-300">
-                  {new Date(c.createdAt).toLocaleString()}
+                  {formatDateTime(c.createdAt)}
                 </dd>
               </div>
               {c.description && (
@@ -138,7 +139,7 @@ export default async function CampaignDetailPage({
                       <Badge tone={statusTone[l.status]}>{l.status}</Badge>
                     </td>
                     <td className="px-6 py-3 text-slate-500 dark:text-slate-400">
-                      {new Date(l.createdAt).toLocaleString()}
+                      {formatDateTime(l.createdAt)}
                     </td>
                   </tr>
                 ))}

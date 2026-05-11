@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { serverFetch } from '@/lib/auth';
+import { formatDateTime } from '@/lib/datetime';
 import type { Lead } from '@/lib/types';
 import { LeadEditor } from './editor';
 
@@ -26,7 +27,7 @@ export default async function LeadDetailPage({
             >
               {lead.campaignName ?? lead.campaignId}
             </Link>{' '}
-            · submitted {new Date(lead.createdAt).toLocaleString()}
+            · submitted {formatDateTime(lead.createdAt)}
           </>
         }
         actions={
