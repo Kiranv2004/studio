@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import { Clock, Plug } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/cn';
 import type { ChannelAccount, ChannelKind } from '@/lib/types';
 import { ChannelList } from './ChannelList';
@@ -158,16 +159,21 @@ function AvailablePanel({
       <div className="lg:col-span-2 space-y-6">
         {channels.length === 0 ? (
           <Card>
-            <div className="py-10 text-center">
-              <div className="mx-auto mb-3 grid h-10 w-10 place-items-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                <Plug className="h-5 w-5" />
+            <div className="py-8 text-center">
+              <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                <Plug className="h-6 w-6" />
               </div>
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
                 No {label} accounts connected yet
               </p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Use the panel on the right to connect this studio&rsquo;s account.
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
+                Connect your {label} account to start receiving messages and collect leads directly into this studio.
               </p>
+              <div className="mt-4">
+                <Button onClick={() => document.getElementById('connect-whatsapp')?.scrollIntoView({ behavior: 'smooth' })}>
+                  Connect WhatsApp
+                </Button>
+              </div>
             </div>
           </Card>
         ) : (

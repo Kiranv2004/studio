@@ -32,6 +32,7 @@ func (h *Handler) AdminRoutes(r chi.Router) {
 	r.Delete("/channels/{id}", h.disconnectChannel)
 
 	r.Get("/conversations", h.listConversations)
+	r.Post("/conversations", h.createConversation)
 	r.Get("/conversations/{id}", h.getConversation)
 	r.Get("/conversations/{id}/messages", h.listMessages)
 	r.Post("/conversations/{id}/messages", h.sendMessage)
@@ -58,10 +59,10 @@ func (h *Handler) listChannels(w http.ResponseWriter, r *http.Request) {
 }
 
 type connectWhatsAppReq struct {
-	WABAID         string `json:"wabaId"`
-	PhoneNumberID  string `json:"phoneNumberId"`
-	DisplayPhone   string `json:"displayPhone"`
-	AccessToken    string `json:"accessToken"`
+	WABAID        string `json:"wabaId"`
+	PhoneNumberID string `json:"phoneNumberId"`
+	DisplayPhone  string `json:"displayPhone"`
+	AccessToken   string `json:"accessToken"`
 }
 
 func (h *Handler) connectWhatsApp(w http.ResponseWriter, r *http.Request) {
@@ -158,6 +159,35 @@ func (h *Handler) getConversation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.JSON(w, http.StatusOK, c)
+}
+
+type createConversationReq struct {
+	ContactValue string `json:"contactValue"`
+	DisplayName  string `json:"displayName"`
+}
+
+func (h *Handler) createConversation(w http.ResponseWriter, r *http.Request) {
+	studioID, ok := studioIDFromPath(w, r)
+	if !ok {
+		return
+	}
+	var req createConversationReq
+	if !httpx.DecodeJSON(w, r, &req) {
+		return
+	}
+	conv, err := h.svc.CreateConversation(r.Context(), studioID, CreateConversationInput{
+		ContactValue: req.ContactValue,
+		DisplayName:  req.DisplayName,
+	})
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			httpx.WriteError(w, http.StatusBadRequest, "no_channel", "connect a channel before starting a conversation")
+			return
+		}
+		httpx.WriteError(w, http.StatusBadRequest, "invalid", err.Error())
+		return
+	}
+	httpx.JSON(w, http.StatusCreated, conv)
 }
 
 func (h *Handler) listMessages(w http.ResponseWriter, r *http.Request) {

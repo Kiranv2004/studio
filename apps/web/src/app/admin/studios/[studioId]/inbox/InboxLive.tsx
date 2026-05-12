@@ -42,6 +42,8 @@ export function InboxLive({
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  const [newReceiverNumber, setNewReceiverNumber] = useState('');
+  const [creatingConversation, setCreatingConversation] = useState(false);
   const messagesEndRef = useRef<HTMLLIElement>(null);
 
   const selected = conversations.find((c) => c.id === selectedId);
@@ -117,23 +119,62 @@ export function InboxLive({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  function makeOptimisticOutboundMessage(body: string): Message {
+    const now = new Date().toISOString();
+    return {
+      id: `temp-${Date.now()}`,
+      conversationId: selectedId ?? '',
+      studioId,
+      direction: 'outbound',
+      sourceKind: 'studio_user',
+      body,
+      status: 'pending',
+      sentAt: now,
+      createdAt: now,
+    };
+  }
+
   async function send() {
     if (!selectedId || !draft.trim()) return;
+    const body = draft.trim();
+    const optimistic = makeOptimisticOutboundMessage(body);
     setSending(true);
+    setMessages((current) => [...current, optimistic]);
+    setDraft('');
     try {
       await api(`/api/v1/studios/${studioId}/messaging/conversations/${selectedId}/messages`, {
         method: 'POST',
-        json: { body: draft.trim() },
+        json: { body },
       });
-      setDraft('');
-      // Optimistic re-fetch; the worker will dispatch within ~2s and the SSE
-      // event will refresh again with the actual sent state.
-      refreshMessages(selectedId);
       refreshConversations();
     } catch {
+      setMessages((current) => current.filter((msg) => msg.id !== optimistic.id));
+      setDraft(body);
       // Inline error UX comes later; for L1 we just leave the draft.
     } finally {
       setSending(false);
+    }
+  }
+
+  async function createConversation() {
+    if (!newReceiverNumber.trim()) return;
+    setCreatingConversation(true);
+    try {
+      const conv = await api<Conversation>(
+        `/api/v1/studios/${studioId}/messaging/conversations`,
+        {
+          method: 'POST',
+          json: { contactValue: newReceiverNumber.trim() },
+        },
+      );
+      setNewReceiverNumber('');
+      setSelectedId(conv.id);
+      await refreshConversations();
+    } catch (error) {
+      console.error('Failed to create conversation:', error);
+      // Inline error UX comes later
+    } finally {
+      setCreatingConversation(false);
     }
   }
 
@@ -143,6 +184,31 @@ export function InboxLive({
       <aside className="hidden w-80 shrink-0 flex-col border-r border-slate-200 dark:border-slate-800 sm:flex">
         <div className="border-b border-slate-100 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:text-slate-400">
           Conversations
+        </div>
+        <div className="border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              createConversation();
+            }}
+            className="flex gap-2"
+          >
+            <input
+              type="text"
+              value={newReceiverNumber}
+              onChange={(e) => setNewReceiverNumber(e.target.value)}
+              placeholder="Enter phone number"
+              className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:border-[color:var(--brand,#7c3aed)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-softer,rgba(124,58,237,0.18))] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+            />
+            <Button
+              type="submit"
+              disabled={!newReceiverNumber.trim()}
+              loading={creatingConversation}
+              size="sm"
+            >
+              Start
+            </Button>
+          </form>
         </div>
         <ul className="flex-1 overflow-y-auto">
           {conversations.map((c) => (
@@ -257,8 +323,15 @@ export function InboxLive({
             </footer>
           </>
         ) : (
-          <div className="grid flex-1 place-items-center text-sm text-slate-500">
-            Pick a conversation on the left.
+          <div className="grid flex-1 place-items-center px-6 py-8 text-center">
+            <div className="max-w-md">
+              <div className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                Start a conversation
+              </div>
+              <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                Type the receiver number on the left to open a thread, then send the first message here.
+              </p>
+            </div>
           </div>
         )}
       </section>

@@ -73,8 +73,15 @@ func (m *MetaWhatsApp) SendText(ctx context.Context, accessToken, channelExterna
 		}
 		_ = json.Unmarshal(respBody, &errEnv)
 		if errEnv.Error.Message != "" {
+			if resp.StatusCode == http.StatusUnauthorized || errEnv.Error.Code == 190 {
+				return nil, fmt.Errorf("%w: meta whatsapp auth failed: HTTP %d %s (code=%d, type=%s)",
+					ErrInvalidCredentials, resp.StatusCode, errEnv.Error.Message, errEnv.Error.Code, errEnv.Error.Type)
+			}
 			return nil, fmt.Errorf("meta whatsapp send: HTTP %d %s (code=%d, type=%s)",
 				resp.StatusCode, errEnv.Error.Message, errEnv.Error.Code, errEnv.Error.Type)
+		}
+		if resp.StatusCode == http.StatusUnauthorized {
+			return nil, fmt.Errorf("%w: meta whatsapp auth failed: HTTP %d", ErrInvalidCredentials, resp.StatusCode)
 		}
 		return nil, fmt.Errorf("meta whatsapp send: HTTP %d: %s", resp.StatusCode, string(respBody))
 	}
@@ -106,8 +113,8 @@ func (m *MetaWhatsApp) SendText(ctx context.Context, accessToken, channelExterna
 // Reference:
 // https://developers.facebook.com/docs/whatsapp/cloud-api/webhooks/payload-examples
 type WhatsAppWebhookPayload struct {
-	Object string                  `json:"object"`
-	Entry  []WhatsAppWebhookEntry  `json:"entry"`
+	Object string                 `json:"object"`
+	Entry  []WhatsAppWebhookEntry `json:"entry"`
 }
 
 type WhatsAppWebhookEntry struct {
@@ -116,13 +123,13 @@ type WhatsAppWebhookEntry struct {
 }
 
 type WhatsAppWebhookChange struct {
-	Field string                 `json:"field"`
-	Value WhatsAppWebhookValue   `json:"value"`
+	Field string               `json:"field"`
+	Value WhatsAppWebhookValue `json:"value"`
 }
 
 type WhatsAppWebhookValue struct {
-	MessagingProduct string                  `json:"messaging_product"`
-	Metadata         WhatsAppWebhookMetadata `json:"metadata"`
+	MessagingProduct string                   `json:"messaging_product"`
+	Metadata         WhatsAppWebhookMetadata  `json:"metadata"`
 	Contacts         []WhatsAppWebhookContact `json:"contacts,omitempty"`
 	Messages         []WhatsAppWebhookMessage `json:"messages,omitempty"`
 	Statuses         []WhatsAppWebhookStatus  `json:"statuses,omitempty"`
@@ -141,10 +148,10 @@ type WhatsAppWebhookContact struct {
 }
 
 type WhatsAppWebhookMessage struct {
-	From      string `json:"from"`     // contact phone (no '+')
-	ID        string `json:"id"`       // wamid....
+	From      string `json:"from"`      // contact phone (no '+')
+	ID        string `json:"id"`        // wamid....
 	Timestamp string `json:"timestamp"` // unix seconds, as string
-	Type      string `json:"type"`     // text | image | audio | video | document | reaction | ...
+	Type      string `json:"type"`      // text | image | audio | video | document | reaction | ...
 	Text      *struct {
 		Body string `json:"body"`
 	} `json:"text,omitempty"`
@@ -153,7 +160,7 @@ type WhatsAppWebhookMessage struct {
 	Audio    *WhatsAppWebhookMedia `json:"audio,omitempty"`
 	Document *WhatsAppWebhookMedia `json:"document,omitempty"`
 	Context  *struct {
-		ID string `json:"id"`
+		ID   string `json:"id"`
 		From string `json:"from"`
 	} `json:"context,omitempty"`
 }
@@ -166,8 +173,8 @@ type WhatsAppWebhookMedia struct {
 }
 
 type WhatsAppWebhookStatus struct {
-	ID          string `json:"id"`        // outbound wamid we sent earlier
-	Status      string `json:"status"`    // sent | delivered | read | failed
+	ID          string `json:"id"`     // outbound wamid we sent earlier
+	Status      string `json:"status"` // sent | delivered | read | failed
 	Timestamp   string `json:"timestamp"`
 	RecipientID string `json:"recipient_id"`
 }

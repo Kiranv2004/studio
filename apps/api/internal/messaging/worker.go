@@ -16,10 +16,10 @@ import (
 // channel adapter. Single in-process worker for now; multiple replicas would
 // race-safely thanks to FOR UPDATE SKIP LOCKED in ClaimOutboundBatch.
 type OutboundWorker struct {
-	repo   *Repo
-	bus    Bus
+	repo     *Repo
+	bus      Bus
 	whatsapp channels.Sender
-	log    *slog.Logger
+	log      *slog.Logger
 }
 
 const (
@@ -71,8 +71,13 @@ func (w *OutboundWorker) dispatch(ctx context.Context, j OutboundJob) {
 		return
 	}
 	if channel.Status != StatusActive {
-		w.failJob(ctx, j, "channel not active: "+string(channel.Status), false)
-		return
+		live, liveErr := w.repo.GetChannelByExternalID(ctx, channel.Kind, channel.ExternalID)
+		if liveErr == nil && live.Status == StatusActive {
+			channel = live
+		} else {
+			w.failJob(ctx, j, "channel not active: "+string(channel.Status), false)
+			return
+		}
 	}
 
 	var sender channels.Sender

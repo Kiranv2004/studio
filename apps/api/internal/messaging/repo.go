@@ -31,13 +31,13 @@ func (r *Repo) Pool() *pgxpool.Pool { return r.pool }
 // ============================================================
 
 type CreateChannelInput struct {
-	StudioID      uuid.UUID
-	Kind          ChannelKind
-	BSP           string
-	ExternalID    string
-	ParentID      string
-	DisplayHandle string
-	AccessToken   string // plaintext; encrypted before write
+	StudioID       uuid.UUID
+	Kind           ChannelKind
+	BSP            string
+	ExternalID     string
+	ParentID       string
+	DisplayHandle  string
+	AccessToken    string // plaintext; encrypted before write
 	TokenExpiresAt *time.Time
 }
 
@@ -77,7 +77,7 @@ func (r *Repo) ListChannels(ctx context.Context, studioID uuid.UUID) ([]ChannelA
 		SELECT id, kind, bsp, external_id, parent_id, display_handle,
 		       status, last_error, connected_at, disconnected_at, created_at, updated_at
 		FROM channel_accounts
-		WHERE studio_id = $1
+		WHERE studio_id = $1 AND status != 'disconnected'
 		ORDER BY created_at DESC
 	`, studioID)
 	if err != nil {
@@ -117,8 +117,25 @@ func (r *Repo) GetChannelByExternalID(ctx context.Context, kind ChannelKind, ext
 		       access_token_enc, status, last_error, connected_at, disconnected_at,
 		       created_at, updated_at
 		FROM channel_accounts
-		WHERE kind = $1 AND external_id = $2
+		WHERE kind = $1 AND external_id = $2 AND status <> 'disconnected'
+		ORDER BY CASE status WHEN 'active' THEN 0 ELSE 1 END, connected_at DESC
+		LIMIT 1
 	`, kind, externalID)
+	return r.scanChannelWithToken(row)
+}
+
+// GetActiveChannelByStudio returns the most recently connected active channel
+// for a studio. The inbox uses this to start a new conversation from the UI.
+func (r *Repo) GetActiveChannelByStudio(ctx context.Context, studioID uuid.UUID) (*ChannelAccount, error) {
+	row := r.pool.QueryRow(ctx, `
+		SELECT id, studio_id, kind, bsp, external_id, parent_id, display_handle,
+		       access_token_enc, status, last_error, connected_at, disconnected_at,
+		       created_at, updated_at
+		FROM channel_accounts
+		WHERE studio_id = $1 AND status = 'active'
+		ORDER BY connected_at DESC
+		LIMIT 1
+	`, studioID)
 	return r.scanChannelWithToken(row)
 }
 

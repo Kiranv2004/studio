@@ -29,10 +29,10 @@ func NewService(repo *Repo, bus Bus) *Service {
 // ============================================================
 
 type ConnectWhatsAppInput struct {
-	WABAID         string  // parent (WhatsApp Business Account)
-	PhoneNumberID  string  // external_id Meta sends in webhooks
-	DisplayPhone   string  // human-readable, e.g. "+65 9123 4567"
-	AccessToken    string  // permanent system-user or user-access token
+	WABAID        string // parent (WhatsApp Business Account)
+	PhoneNumberID string // external_id Meta sends in webhooks
+	DisplayPhone  string // human-readable, e.g. "+65 9123 4567"
+	AccessToken   string // permanent system-user or user-access token
 }
 
 func (s *Service) ConnectWhatsApp(ctx context.Context, studioID uuid.UUID, in ConnectWhatsAppInput) (*ChannelAccount, error) {
@@ -62,6 +62,58 @@ func (s *Service) ListChannels(ctx context.Context, studioID uuid.UUID) ([]Chann
 
 func (s *Service) DisconnectChannel(ctx context.Context, studioID, id uuid.UUID) error {
 	return s.repo.DisconnectChannel(ctx, studioID, id)
+}
+
+type CreateConversationInput struct {
+	ContactValue string
+	DisplayName  string
+}
+
+// CreateConversation opens a thread for a contact on the newest active
+// channel in the studio so the inbox can start from a typed receiver number.
+func (s *Service) CreateConversation(ctx context.Context, studioID uuid.UUID, in CreateConversationInput) (*Conversation, error) {
+	in.ContactValue = strings.TrimSpace(in.ContactValue)
+	in.DisplayName = strings.TrimSpace(in.DisplayName)
+	if in.ContactValue == "" {
+		return nil, errors.New("contactValue is required")
+	}
+
+	channel, err := s.repo.GetActiveChannelByStudio(ctx, studioID)
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := s.repo.Pool().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	if in.DisplayName == "" {
+		in.DisplayName = in.ContactValue
+	}
+
+	identity, err := s.repo.FindOrCreateIdentity(ctx, tx, studioID, IdentityPhone, in.ContactValue, in.DisplayName)
+	if err != nil {
+		return nil, err
+	}
+
+	conv, err := s.repo.FindOrCreateConversation(ctx, tx, studioID, channel.ID, identity.ID, in.ContactValue)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("commit: %w", err)
+	}
+
+	s.bus.Publish(ctx, Event{
+		Kind:           EvtConversationUpdated,
+		StudioID:       studioID,
+		ConversationID: conv.ID,
+	})
+
+	return conv, nil
 }
 
 // ============================================================
