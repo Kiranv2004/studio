@@ -5,30 +5,32 @@ export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline' | 'dan
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 const variantClasses: Record<ButtonVariant, string> = {
-  // primary uses CSS variables --brand / --brand-onbrand set by <AppShell>.
-  // Falls back to the platform violet when no theme scope is in effect.
   primary: cn(
-    'bg-[var(--brand,#7c3aed)] text-[color:var(--brand-onbrand,#fff)] shadow-sm',
-    'hover:opacity-95 hover:shadow-card',
-    'active:opacity-90',
+    'bg-[var(--brand,#7c3aed)] text-[color:var(--brand-onbrand,#fff)] shadow-lg shadow-brand-500/20',
+    'hover:opacity-90 hover:shadow-xl hover:shadow-brand-500/30 hover:-translate-y-0.5',
+    'active:translate-y-0 active:scale-[0.98]',
+    'animate-pulse-soft',
   ),
   secondary: cn(
-    'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100',
-    'hover:bg-slate-200 dark:hover:bg-slate-700',
+    'bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-100 shadow-sm',
+    'hover:bg-slate-200 dark:hover:bg-slate-700 hover:-translate-y-0.5',
+    'active:translate-y-0 active:scale-[0.98]',
   ),
   ghost: cn(
     'bg-transparent text-slate-700 dark:text-slate-200',
-    'hover:bg-slate-100 dark:hover:bg-slate-800',
+    'hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white',
+    'active:scale-[0.98]',
   ),
   outline: cn(
     'bg-transparent text-slate-700 dark:text-slate-200',
-    'border border-slate-300 dark:border-slate-700',
-    'hover:bg-slate-50 dark:hover:bg-slate-800/60',
-    'hover:border-[var(--brand,#7c3aed)]',
+    'border-2 border-slate-200 dark:border-slate-800',
+    'hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:border-[var(--brand,#7c3aed)] hover:-translate-y-0.5',
+    'active:translate-y-0 active:scale-[0.98]',
   ),
   danger: cn(
-    'bg-red-600 text-white shadow-sm',
-    'hover:bg-red-700',
+    'bg-red-500 text-white shadow-lg shadow-red-500/20',
+    'hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/30 hover:-translate-y-0.5',
+    'active:translate-y-0 active:scale-[0.98]',
   ),
 };
 
@@ -75,6 +77,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         sizeClasses[size],
         className,
       )}
+      suppressHydrationWarning
       {...rest}
     >
       {loading ? <Spinner className="h-4 w-4" /> : leftIcon ? <span className="flex shrink-0 items-center">{leftIcon}</span> : null}

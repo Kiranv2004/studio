@@ -93,7 +93,8 @@ func main() {
 	msgHandler := messaging.NewHandler(msgSvc, msgBus)
 
 	whatsappClient := channels.NewMetaWhatsApp(cfg.Meta.GraphAPIVersion)
-	msgWorker := messaging.NewOutboundWorker(msgRepo, msgBus, whatsappClient,
+	messengerClient := channels.NewMetaMessenger(cfg.Meta.GraphAPIVersion)
+	msgWorker := messaging.NewOutboundWorker(msgRepo, msgBus, whatsappClient, messengerClient,
 		log.With("component", "messaging_worker"))
 	go msgWorker.Run(rootCtx)
 

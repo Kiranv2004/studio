@@ -12,27 +12,94 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* Very subtle radial wash across the admin shell — gives depth without
-     fighting content. Light theme only. */
+  /* Enhanced radial wash for light/dark themes */
   body {
-    @apply text-slate-900 dark:bg-slate-950 dark:text-slate-100;
+    @apply text-slate-900 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100;
     background-color: #f8fafc;
-    background-image:
-      radial-gradient(60% 50% at 100% 0%,  rgba(124, 58, 237, 0.06) 0%, rgba(248, 250, 252, 0) 60%),
-      radial-gradient(50% 40% at 0%   100%, rgba(14, 165, 233, 0.05) 0%, rgba(248, 250, 252, 0) 60%);
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(262, 83%, 58%, 0.05) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(199, 89%, 48%, 0.05) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(262, 83%, 58%, 0.05) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(199, 89%, 48%, 0.05) 0px, transparent 50%);
     background-attachment: fixed;
   }
+  
   .dark body {
-    background-image: none;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(262, 83%, 58%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(199, 89%, 48%, 0.1) 0px, transparent 50%);
   }
 
   ::selection {
-    @apply bg-brand-200 text-brand-900;
+    @apply bg-brand-200/50 text-brand-900 dark:bg-brand-500/30 dark:text-brand-100;
   }
 
-  /* Headings read better with slightly tighter tracking in Nunito since the
-     letterforms are rounded — keeps display sizes from feeling airy. */
-  h1, h2, h3 {
-    letter-spacing: -0.01em;
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold tracking-tight text-slate-900 dark:text-white;
+    letter-spacing: -0.02em;
   }
+}
+
+@layer components {
+  .glass {
+    @apply border border-white/20 bg-white/70 backdrop-blur-md dark:border-white/10 dark:bg-slate-900/70;
+  }
+  
+  .glass-dark {
+    @apply border border-white/5 bg-slate-950/40 backdrop-blur-xl;
+  }
+
+  .animate-in {
+    animation: animate-in 0.5s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes animate-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(0.98); }
+  }
+
+  .shimmer {
+    background: linear-gradient(to right, #f1f5f9 0%, #e2e8f0 20%, #f1f5f9 40%, #f1f5f9 100%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite linear;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-pulse-soft {
+    animation: pulse-soft 3s ease-in-out infinite;
+  }
+
+  /* Staggered entrance helpers */
+  .stagger-1 { animation-delay: 50ms; }
+  .stagger-2 { animation-delay: 100ms; }
+  .stagger-3 { animation-delay: 150ms; }
+  .stagger-4 { animation-delay: 200ms; }
+  .stagger-5 { animation-delay: 250ms; }
 }

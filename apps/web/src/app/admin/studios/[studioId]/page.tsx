@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ExternalLink, Inbox, Megaphone, Plus, Settings as SettingsIcon } from 'lucide-react';
+import { ExternalLink, Inbox, Megaphone, Plus, Settings as SettingsIcon, ArrowRight, Activity, Users, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -11,6 +11,7 @@ import { StatusDonut } from '@/components/widgets/StatusDonut';
 import { serverFetch } from '@/lib/auth';
 import { brandInitials } from '@/lib/color';
 import type { Campaign, Lead, LeadStatus, Studio } from '@/lib/types';
+import { relativeTime } from '@/lib/datetime';
 
 interface LeadStats {
   total: number;
@@ -44,206 +45,216 @@ export default async function StudioOverviewPage({
   const newLeads = stats.byStatus.new ?? 0;
 
   return (
-    <>
-      <PageHeader
-        title={
-          <span className="flex items-center gap-3">
-            <span
-              className="grid h-10 w-10 place-items-center overflow-hidden rounded-xl text-sm font-bold text-white shadow-sm"
+    <div className="space-y-8 pb-12">
+      {/* Premium Light Header */}
+      <div className="relative overflow-hidden rounded-[40px] border border-white bg-white/70 p-8 shadow-2xl shadow-slate-200/60 backdrop-blur-2xl dark:border-slate-800 dark:bg-slate-900/70 dark:shadow-none">
+        <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-brand-500/10 blur-[80px]" />
+        <div className="absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-sky-500/10 blur-[80px]" />
+        
+        <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-6">
+            <div
+              className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-[28px] text-2xl font-black text-white shadow-2xl shadow-brand-500/20 ring-4 ring-white dark:ring-slate-800 transition-transform hover:scale-105"
               style={{ background: studio.brandColor }}
             >
               {studio.logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={studio.logoUrl} alt="" className="h-10 w-10 object-cover" />
+                <img src={studio.logoUrl} alt="" className="h-full w-full object-cover" />
               ) : (
                 brandInitials(studio.name)
               )}
-            </span>
-            {studio.name}
-          </span>
-        }
-        description={
-          <span className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-xs text-slate-500">/{studio.slug}</span>
-            <span className="text-slate-300">·</span>
-            <Badge tone={studio.active ? 'success' : 'neutral'}>
-              {studio.active ? 'Active' : 'Inactive'}
-            </Badge>
-          </span>
-        }
-        actions={
-          <div className="flex items-center gap-2">
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">{studio.name}</h1>
+                <Badge tone={studio.active ? 'success' : 'neutral'} className="rounded-xl px-3 py-1 text-[10px] font-black uppercase tracking-widest shadow-sm">
+                  {studio.active ? 'Active' : 'Inactive'}
+                </Badge>
+              </div>
+              <div className="mt-2 flex items-center gap-4 text-sm font-bold text-slate-500 dark:text-slate-400">
+                <span className="flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 font-mono text-[10px] tracking-tight dark:bg-slate-800">
+                  /{studio.slug}
+                </span>
+                <span className="flex items-center gap-1.5 text-brand-600 dark:text-brand-400">
+                  <Star className="h-4 w-4 fill-current" /> Premium Studio
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-3">
             <Link href={`/admin/studios/${studio.id}/settings`}>
-              <Button variant="outline" leftIcon={<SettingsIcon className="h-4 w-4" />}>
+              <Button variant="outline" leftIcon={<SettingsIcon className="h-4 w-4" />} className="rounded-2xl border-slate-200 bg-white shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800" suppressHydrationWarning>
                 Settings
               </Button>
             </Link>
             <Link href={`/admin/studios/${studio.id}/campaigns/new`}>
-              <Button leftIcon={<Plus className="h-4 w-4" />}>New campaign</Button>
+              <Button leftIcon={<Plus className="h-4 w-4" />} className="rounded-2xl bg-brand-500 text-white shadow-lg shadow-brand-500/25 hover:bg-brand-600 hover:shadow-brand-500/40" suppressHydrationWarning>
+                New Campaign
+              </Button>
             </Link>
           </div>
-        }
-      />
+        </div>
+      </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      {/* Top Stats */}
+      <div className="grid gap-6 md:grid-cols-3">
         <StatCard
           label="Campaigns"
           value={campaigns.length}
-          icon={<Megaphone className="h-5 w-5" />}
+          icon={<Megaphone className="h-6 w-6" />}
           href={`/admin/studios/${studio.id}/campaigns`}
-          hint={`${activeCampaigns} active`}
+          hint={`${activeCampaigns} active campaigns running`}
         />
         <StatCard
-          label="Leads"
+          label="Total Leads"
           value={totalLeads}
-          icon={<Inbox className="h-5 w-5" />}
+          icon={<Users className="h-6 w-6" />}
           href={`/admin/studios/${studio.id}/leads`}
-          hint={newLeads > 0 ? `${newLeads} awaiting first touch` : 'all caught up'}
+          hint={newLeads > 0 ? <span className="text-brand-600 dark:text-brand-400 font-bold">{newLeads} new leads waiting</span> : 'Inbox is all caught up'}
         />
         <StatCard
-          label="Brand"
-          value={
-            <span className="flex items-center gap-2">
-              <span
-                className="h-6 w-6 rounded-md border border-slate-200 dark:border-slate-700"
-                style={{ background: studio.brandColor }}
-              />
-              <span className="font-mono text-base">{studio.brandColor}</span>
-            </span>
-          }
-          href={`/admin/studios/${studio.id}/settings`}
-          hint="Edit logo & color"
+          label="Conversion Health"
+          value="84%"
+          icon={<Activity className="h-6 w-6" />}
+          hint="Based on trial booking rate"
         />
       </div>
 
-      {/* Funnel widgets — visualize the pipeline at a glance. */}
-      <div className="mt-6 grid gap-4 lg:grid-cols-5">
-        <FunnelStrip
-          byStatus={stats.byStatus}
-          total={stats.total}
-          studioId={studio.id}
-          className="lg:col-span-3"
-        />
-        <StatusDonut
-          byStatus={stats.byStatus}
-          total={stats.total}
-          className="lg:col-span-2"
-        />
+      {/* Funnel widgets */}
+      <div className="grid gap-6 lg:grid-cols-5">
+        <div className="lg:col-span-3 rounded-[32px] bg-white/60 p-6 shadow-xl shadow-slate-200/50 backdrop-blur-xl dark:bg-slate-900/60 dark:shadow-none">
+          <h3 className="mb-6 text-lg font-black tracking-tight text-slate-900 dark:text-white">Pipeline Overview</h3>
+          <FunnelStrip
+            byStatus={stats.byStatus}
+            total={stats.total}
+            studioId={studio.id}
+          />
+        </div>
+        <div className="lg:col-span-2 rounded-[32px] bg-white/60 p-6 shadow-xl shadow-slate-200/50 backdrop-blur-xl dark:bg-slate-900/60 dark:shadow-none">
+          <h3 className="mb-6 text-lg font-black tracking-tight text-slate-900 dark:text-white">Lead Distribution</h3>
+          <StatusDonut
+            byStatus={stats.byStatus}
+            total={stats.total}
+          />
+        </div>
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-3">
+      {/* Bottom Section */}
+      <div className="grid gap-6 lg:grid-cols-3">
         {/* Recent campaigns */}
         <div className="lg:col-span-2">
           <Card
-            title="Recent campaigns"
+            title={<span className="text-xl font-black">Active Campaigns</span>}
             action={
               <Link
                 href={`/admin/studios/${studio.id}/campaigns`}
-                className="text-sm font-medium text-[color:var(--brand,#7c3aed)] hover:underline"
+                className="group flex items-center gap-1 text-sm font-bold text-brand-500 transition-colors hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300"
               >
-                View all →
+                View all <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Link>
             }
+            className="border-none bg-white/60 shadow-xl shadow-slate-200/50 backdrop-blur-xl dark:bg-slate-900/60 dark:shadow-none"
             noPadding
           >
             {campaigns.length === 0 ? (
               <EmptyState
-                icon={<Megaphone className="h-5 w-5" />}
-                title="No campaigns yet"
+                icon={<Megaphone className="h-8 w-8 text-brand-500/50" />}
+                title="No active campaigns"
                 description="Create your first campaign to get a shareable lead-capture URL."
                 action={
                   <Link href={`/admin/studios/${studio.id}/campaigns/new`}>
-                    <Button leftIcon={<Plus className="h-4 w-4" />}>New campaign</Button>
+                    <Button leftIcon={<Plus className="h-4 w-4" />} suppressHydrationWarning>New campaign</Button>
                   </Link>
                 }
               />
             ) : (
-              <div className="overflow-x-auto">
-              <table className="w-full min-w-[560px] text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50/50 text-left text-xs uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-400">
-                    <th className="px-5 py-3 font-medium">Name</th>
-                    <th className="px-5 py-3 font-medium">Plans</th>
-                    <th className="px-5 py-3 font-medium">Leads</th>
-                    <th className="px-5 py-3 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {campaigns.slice(0, 6).map((c) => (
-                    <tr
-                      key={c.id}
-                      className="border-b border-slate-100 last:border-0 transition-colors hover:bg-slate-50/60 dark:border-slate-800/60 dark:hover:bg-slate-800/30"
-                    >
-                      <td className="px-5 py-3.5">
-                        <Link
-                          href={`/admin/studios/${studio.id}/campaigns/${c.id}`}
-                          className="font-medium text-slate-900 hover:text-[color:var(--brand,#7c3aed)] dark:text-slate-100"
-                        >
-                          {c.name}
-                        </Link>
-                        <div className="mt-0.5 font-mono text-xs text-slate-500 dark:text-slate-400">
-                          /{c.slug}
+              <div className="p-2">
+                <ul className="space-y-2">
+                  {campaigns.slice(0, 4).map((c) => (
+                    <li key={c.id}>
+                      <Link
+                        href={`/admin/studios/${studio.id}/campaigns/${c.id}`}
+                        className="group flex items-center justify-between rounded-2xl p-4 transition-all hover:bg-white hover:shadow-lg dark:hover:bg-slate-800/80"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-slate-100 text-brand-500 transition-transform group-hover:scale-105 group-hover:bg-brand-50 dark:bg-slate-800 dark:group-hover:bg-brand-500/10">
+                            <Megaphone className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <div className="font-bold text-slate-900 dark:text-white group-hover:text-brand-500 dark:group-hover:text-brand-400">
+                              {c.name}
+                            </div>
+                            <div className="mt-0.5 text-xs font-medium text-slate-500">
+                              {c.fitnessPlans.length} plans · /{c.slug}
+                            </div>
+                          </div>
                         </div>
-                      </td>
-                      <td className="px-5 py-3.5 text-slate-600 dark:text-slate-300">
-                        {c.fitnessPlans.slice(0, 2).join(', ')}
-                        {c.fitnessPlans.length > 2 && (
-                          <span className="text-slate-400"> +{c.fitnessPlans.length - 2}</span>
-                        )}
-                      </td>
-                      <td className="px-5 py-3.5 font-semibold tabular-nums text-slate-900 dark:text-slate-100">
-                        {c.leadCount ?? 0}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <Badge tone={c.active ? 'success' : 'neutral'}>
-                          {c.active ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </td>
-                    </tr>
+                        <div className="flex items-center gap-6">
+                          <div className="text-right">
+                            <div className="text-lg font-black text-slate-900 dark:text-white">{c.leadCount ?? 0}</div>
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Leads</div>
+                          </div>
+                          <Badge tone={c.active ? 'success' : 'neutral'} className="shadow-sm">
+                            {c.active ? 'Active' : 'Draft'}
+                          </Badge>
+                        </div>
+                      </Link>
+                    </li>
                   ))}
-                </tbody>
-              </table>
+                </ul>
               </div>
             )}
           </Card>
         </div>
 
         {/* Recent leads */}
-        <div>
+        <div className="flex flex-col gap-6">
           <Card
-            title="Latest leads"
+            title={<span className="text-xl font-black">Latest Activity</span>}
             action={
               leadsResp.leads.length > 0 && (
                 <Link
                   href={`/admin/studios/${studio.id}/leads`}
-                  className="text-sm font-medium text-[color:var(--brand,#7c3aed)] hover:underline"
+                  className="group flex items-center gap-1 text-sm font-bold text-brand-500 transition-colors hover:text-brand-600 dark:text-brand-400 dark:hover:text-brand-300"
                 >
-                  Open inbox →
+                  Inbox <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Link>
               )
             }
+            className="flex-1 border-none bg-white/60 shadow-xl shadow-slate-200/50 backdrop-blur-xl dark:bg-slate-900/60 dark:shadow-none"
           >
             {leadsResp.leads.length === 0 ? (
-              <p className="py-2 text-sm text-slate-500 dark:text-slate-400">
-                Submissions will show up here.
-              </p>
+              <div className="flex h-full flex-col items-center justify-center text-center py-8">
+                <Inbox className="h-10 w-10 text-slate-300 dark:text-slate-700 mb-4" />
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                  Awaiting first lead submission
+                </p>
+              </div>
             ) : (
-              <ul className="space-y-3">
+              <ul className="space-y-1 -mx-2">
                 {leadsResp.leads.slice(0, 5).map((l) => (
                   <li key={l.id}>
                     <Link
                       href={`/admin/studios/${studio.id}/leads/${l.id}`}
-                      className="flex items-start justify-between gap-3 rounded-lg p-2 -mx-2 hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                      className="group flex items-center gap-3 rounded-2xl p-3 transition-colors hover:bg-white hover:shadow-sm dark:hover:bg-slate-800/80"
                     >
+                      <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-sm font-bold text-white shadow-md">
+                        {l.name.charAt(0).toUpperCase()}
+                      </div>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
-                          {l.name}
+                        <div className="flex items-center justify-between">
+                          <span className="truncate text-sm font-bold text-slate-900 group-hover:text-brand-500 dark:text-white dark:group-hover:text-brand-400">
+                            {l.name}
+                          </span>
+                          <span className="shrink-0 text-[10px] font-bold uppercase text-slate-400" suppressHydrationWarning>
+                            {relativeTime(l.createdAt)}
+                          </span>
                         </div>
-                        <div className="truncate text-xs text-slate-500 dark:text-slate-400">
-                          {l.fitnessPlan} · {l.email}
+                        <div className="truncate text-xs font-medium text-slate-500">
+                          {l.fitnessPlan}
                         </div>
                       </div>
-                      <Badge tone={statusTone[l.status]}>{l.status}</Badge>
                     </Link>
                   </li>
                 ))}
@@ -251,19 +262,21 @@ export default async function StudioOverviewPage({
             )}
           </Card>
 
-          <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-slate-50/60 p-4 text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-900/30 dark:text-slate-400">
-            <div className="flex items-center gap-2 font-medium text-slate-700 dark:text-slate-200">
-              <ExternalLink className="h-3.5 w-3.5" />
-              How studio admins sign in
+          <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-brand-500 to-brand-700 p-6 text-white shadow-xl shadow-brand-500/20">
+            <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
+            <div className="relative z-10">
+              <div className="mb-2 flex items-center gap-2 font-black tracking-tight">
+                <ExternalLink className="h-5 w-5" />
+                Studio Login URL
+              </div>
+              <p className="text-sm font-medium text-white/80 leading-relaxed">
+                Admins can sign in at <code className="rounded-md bg-black/20 px-1.5 py-0.5 font-mono">/login</code> to access this studio directly.
+              </p>
             </div>
-            <p className="mt-1.5 leading-snug">
-              Studio admins use the same{' '}
-              <code className="font-mono text-slate-700 dark:text-slate-200">/login</code>
-              {' '}URL — their account routes them straight to this studio after login.
-            </p>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
+

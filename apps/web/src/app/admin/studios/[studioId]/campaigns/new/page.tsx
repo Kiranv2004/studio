@@ -53,11 +53,19 @@ export default function NewCampaignPage() {
   }
 
   return (
-    <>
-      <PageHeader
-        title="New campaign"
-        description="A campaign defines the fitness plans the form offers and produces a unique shareable link."
-      />
+    <div className="space-y-8 pb-12">
+      {/* Premium New Campaign Header Box */}
+      <div className="relative overflow-hidden rounded-[32px] border border-white bg-white/70 p-6 shadow-xl shadow-slate-200/50 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/70">
+        <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-brand-500/5 blur-3xl" />
+        <div className="relative flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Create Campaign</h1>
+            <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">
+              Configure a new lead magnet and generate a high-converting landing page.
+            </p>
+          </div>
+        </div>
+      </div>
       <div className="mx-auto max-w-2xl">
         <Card>
           <form onSubmit={onSubmit} className="space-y-5">
@@ -126,6 +134,6 @@ export default function NewCampaignPage() {
           </form>
         </Card>
       </div>
-    </>
+    </div>
   );
 }

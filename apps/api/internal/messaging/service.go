@@ -28,30 +28,30 @@ func NewService(repo *Repo, bus Bus) *Service {
 // Channel CRUD (thin wrappers around repo + future webhook subscription)
 // ============================================================
 
-type ConnectWhatsAppInput struct {
-	WABAID        string // parent (WhatsApp Business Account)
-	PhoneNumberID string // external_id Meta sends in webhooks
-	DisplayPhone  string // human-readable, e.g. "+65 9123 4567"
-	AccessToken   string // permanent system-user or user-access token
+type ConnectMetaInput struct {
+	Kind          ChannelKind
+	ExternalID    string // IG Account ID or Page ID
+	ParentID      string // Optional WABA or App ID
+	DisplayHandle string // e.g. "@username" or "Page Name"
+	AccessToken   string
 }
 
-func (s *Service) ConnectWhatsApp(ctx context.Context, studioID uuid.UUID, in ConnectWhatsAppInput) (*ChannelAccount, error) {
-	in.WABAID = strings.TrimSpace(in.WABAID)
-	in.PhoneNumberID = strings.TrimSpace(in.PhoneNumberID)
-	in.DisplayPhone = strings.TrimSpace(in.DisplayPhone)
+func (s *Service) ConnectMetaChannel(ctx context.Context, studioID uuid.UUID, in ConnectMetaInput) (*ChannelAccount, error) {
+	in.ExternalID = strings.TrimSpace(in.ExternalID)
+	in.DisplayHandle = strings.TrimSpace(in.DisplayHandle)
 	in.AccessToken = strings.TrimSpace(in.AccessToken)
 
-	if in.WABAID == "" || in.PhoneNumberID == "" || in.DisplayPhone == "" || in.AccessToken == "" {
-		return nil, errors.New("wabaId, phoneNumberId, displayPhone, accessToken are all required")
+	if in.ExternalID == "" || in.DisplayHandle == "" || in.AccessToken == "" {
+		return nil, errors.New("externalId, displayHandle, and accessToken are required")
 	}
 
 	return s.repo.CreateChannel(ctx, CreateChannelInput{
 		StudioID:      studioID,
-		Kind:          KindWhatsAppMeta,
+		Kind:          in.Kind,
 		BSP:           "meta_direct",
-		ExternalID:    in.PhoneNumberID,
-		ParentID:      in.WABAID,
-		DisplayHandle: in.DisplayPhone,
+		ExternalID:    in.ExternalID,
+		ParentID:      in.ParentID,
+		DisplayHandle: in.DisplayHandle,
 		AccessToken:   in.AccessToken,
 	})
 }
@@ -230,6 +230,72 @@ func (s *Service) HandleInboundWhatsAppMessage(ctx context.Context,
 			Kind:           EvtConversationUpdated,
 			StudioID:       channel.StudioID,
 			ConversationID: conv.ID,
+		})
+	}
+	return nil
+}
+
+// HandleInboundMessaging processes a DM from Instagram or Facebook Messenger.
+func (s *Service) HandleInboundMessaging(ctx context.Context, kind ChannelKind, m channels.MetaWebhookMessaging) error {
+	if m.Message == nil || m.Message.Mid == "" {
+		return nil
+	}
+
+	// 1. Resolve the channel account by the recipient's ID (the IG Account or FB Page PSID).
+	channel, err := s.repo.GetChannelByExternalID(ctx, kind, m.Recipient.ID)
+	if err != nil {
+		// Log the mismatch so we can debug.
+		fmt.Printf("DEBUG: Meta message received for unknown channel: kind=%s, recipientID=%s\n", kind, m.Recipient.ID)
+		return nil
+	}
+
+	tx, err := s.repo.Pool().BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	// 2. Identity: use the specific Meta identity kind (ig_psid or fb_psid).
+	idKind := IdentityIGPSID
+	if kind == KindMessengerMeta {
+		idKind = IdentityFBPSID
+	}
+
+	identity, err := s.repo.FindOrCreateIdentity(ctx, tx, channel.StudioID, idKind, m.Sender.ID, "")
+	if err != nil {
+		return err
+	}
+
+	// 3. Conversation.
+	conv, err := s.repo.FindOrCreateConversation(ctx, tx, channel.StudioID, channel.ID, identity.ID, m.Sender.ID)
+	if err != nil {
+		return err
+	}
+
+	// 4. Insert message.
+	stored, err := s.repo.InsertMessage(ctx, tx, CreateMessageInput{
+		ConversationID: conv.ID,
+		StudioID:       channel.StudioID,
+		Direction:      DirectionInbound,
+		SourceKind:     SourceCustomer,
+		Body:           m.Message.Text,
+		ExternalID:     m.Message.Mid,
+		SentAt:         time.Unix(m.Timestamp/1000, (m.Timestamp%1000)*1000000).UTC(),
+	})
+	if err != nil {
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit: %w", err)
+	}
+
+	if stored != nil {
+		s.bus.Publish(ctx, Event{
+			Kind:           EvtMessageReceived,
+			StudioID:       channel.StudioID,
+			ConversationID: conv.ID,
+			MessageID:      &stored.ID,
 		})
 	}
 	return nil

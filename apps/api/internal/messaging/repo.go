@@ -139,6 +139,21 @@ func (r *Repo) GetActiveChannelByStudio(ctx context.Context, studioID uuid.UUID)
 	return r.scanChannelWithToken(row)
 }
 
+// GetActiveChannelByKind returns the most recently connected active channel
+// of a specific kind for a studio. Used by the outbound worker as a fallback.
+func (r *Repo) GetActiveChannelByKind(ctx context.Context, studioID uuid.UUID, kind ChannelKind) (*ChannelAccount, error) {
+	row := r.pool.QueryRow(ctx, `
+		SELECT id, studio_id, kind, bsp, external_id, parent_id, display_handle,
+		       access_token_enc, status, last_error, connected_at, disconnected_at,
+		       created_at, updated_at
+		FROM channel_accounts
+		WHERE studio_id = $1 AND kind = $2 AND status = 'active'
+		ORDER BY connected_at DESC
+		LIMIT 1
+	`, studioID, kind)
+	return r.scanChannelWithToken(row)
+}
+
 func (r *Repo) scanChannelWithToken(row pgx.Row) (*ChannelAccount, error) {
 	var c ChannelAccount
 	var encToken string

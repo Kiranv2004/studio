@@ -29,6 +29,8 @@ func NewHandler(svc *Service, bus Bus) *Handler {
 func (h *Handler) AdminRoutes(r chi.Router) {
 	r.Get("/channels", h.listChannels)
 	r.Post("/channels/whatsapp", h.connectWhatsApp)
+	r.Post("/channels/instagram", h.connectInstagram)
+	r.Post("/channels/messenger", h.connectMessenger)
 	r.Delete("/channels/{id}", h.disconnectChannel)
 
 	r.Get("/conversations", h.listConversations)
@@ -58,10 +60,10 @@ func (h *Handler) listChannels(w http.ResponseWriter, r *http.Request) {
 	httpx.JSON(w, http.StatusOK, map[string]any{"channels": list})
 }
 
-type connectWhatsAppReq struct {
-	WABAID        string `json:"wabaId"`
-	PhoneNumberID string `json:"phoneNumberId"`
-	DisplayPhone  string `json:"displayPhone"`
+type connectMetaReq struct {
+	ExternalID    string `json:"externalId"`    // ID or phone
+	ParentID      string `json:"parentId"`      // WABA ID or App ID
+	DisplayHandle string `json:"displayHandle"` // handle or name
 	AccessToken   string `json:"accessToken"`
 }
 
@@ -70,14 +72,66 @@ func (h *Handler) connectWhatsApp(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	var req connectWhatsAppReq
+	var req struct {
+		WABAID        string `json:"wabaId"`
+		PhoneNumberID string `json:"phoneNumberId"`
+		DisplayPhone  string `json:"displayPhone"`
+		AccessToken   string `json:"accessToken"`
+	}
 	if !httpx.DecodeJSON(w, r, &req) {
 		return
 	}
-	ch, err := h.svc.ConnectWhatsApp(r.Context(), studioID, ConnectWhatsAppInput{
-		WABAID:        req.WABAID,
-		PhoneNumberID: req.PhoneNumberID,
-		DisplayPhone:  req.DisplayPhone,
+	ch, err := h.svc.ConnectMetaChannel(r.Context(), studioID, ConnectMetaInput{
+		Kind:          KindWhatsAppMeta,
+		ExternalID:    req.PhoneNumberID,
+		ParentID:      req.WABAID,
+		DisplayHandle: req.DisplayPhone,
+		AccessToken:   req.AccessToken,
+	})
+	if err != nil {
+		httpx.WriteError(w, http.StatusBadRequest, "invalid", err.Error())
+		return
+	}
+	httpx.JSON(w, http.StatusCreated, ch)
+}
+
+func (h *Handler) connectInstagram(w http.ResponseWriter, r *http.Request) {
+	studioID, ok := studioIDFromPath(w, r)
+	if !ok {
+		return
+	}
+	var req connectMetaReq
+	if !httpx.DecodeJSON(w, r, &req) {
+		return
+	}
+	ch, err := h.svc.ConnectMetaChannel(r.Context(), studioID, ConnectMetaInput{
+		Kind:          KindInstagramMeta,
+		ExternalID:    req.ExternalID,
+		ParentID:      req.ParentID,
+		DisplayHandle: req.DisplayHandle,
+		AccessToken:   req.AccessToken,
+	})
+	if err != nil {
+		httpx.WriteError(w, http.StatusBadRequest, "invalid", err.Error())
+		return
+	}
+	httpx.JSON(w, http.StatusCreated, ch)
+}
+
+func (h *Handler) connectMessenger(w http.ResponseWriter, r *http.Request) {
+	studioID, ok := studioIDFromPath(w, r)
+	if !ok {
+		return
+	}
+	var req connectMetaReq
+	if !httpx.DecodeJSON(w, r, &req) {
+		return
+	}
+	ch, err := h.svc.ConnectMetaChannel(r.Context(), studioID, ConnectMetaInput{
+		Kind:          KindMessengerMeta,
+		ExternalID:    req.ExternalID,
+		ParentID:      req.ParentID,
+		DisplayHandle: req.DisplayHandle,
 		AccessToken:   req.AccessToken,
 	})
 	if err != nil {

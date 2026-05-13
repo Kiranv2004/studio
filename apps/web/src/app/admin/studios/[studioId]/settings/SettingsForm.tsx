@@ -74,6 +74,7 @@ export function SettingsForm({ studio }: { studio: Studio }) {
                     value={brandColor}
                     onChange={(e) => setBrandColor(e.target.value)}
                     className="h-10 w-12 cursor-pointer rounded-md border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-900"
+                    suppressHydrationWarning
                   />
                   <Input
                     value={brandColor}
@@ -114,6 +115,7 @@ export function SettingsForm({ studio }: { studio: Studio }) {
                 checked={active}
                 onChange={(e) => setActive(e.target.checked)}
                 className="h-4 w-4 rounded border-slate-300 text-[color:var(--brand,#7c3aed)] focus:ring-[color:var(--brand,#7c3aed)]"
+                suppressHydrationWarning
               />
               <Label htmlFor="active" className="mb-0">Studio is active</Label>
             </div>
@@ -156,6 +158,7 @@ export function SettingsForm({ studio }: { studio: Studio }) {
                 type="button"
                 className="w-full rounded-xl py-2.5 text-sm font-semibold text-white shadow-sm"
                 style={{ background: brandColor }}
+                suppressHydrationWarning
               >
                 Get in touch
               </button>

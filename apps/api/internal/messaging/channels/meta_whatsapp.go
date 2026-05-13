@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -33,6 +34,12 @@ func NewMetaWhatsApp(apiVersion string) *MetaWhatsApp {
 // SendText: POST /{phone_number_id}/messages with a "text" payload.
 // https://developers.facebook.com/docs/whatsapp/cloud-api/reference/messages
 func (m *MetaWhatsApp) SendText(ctx context.Context, accessToken, channelExternalID, recipient, body string) (*SendResult, error) {
+	// In local dev mode with invalid/empty credentials, mock the send.
+	if os.Getenv("API_ENV") == "local" && (accessToken == "" || accessToken == "test") {
+		return &SendResult{
+			ExternalID: "wamid-test-" + time.Now().Format("20060102150405"),
+		}, nil
+	}
 	if accessToken == "" {
 		return nil, ErrInvalidCredentials
 	}
@@ -72,6 +79,13 @@ func (m *MetaWhatsApp) SendText(ctx context.Context, accessToken, channelExterna
 			} `json:"error"`
 		}
 		_ = json.Unmarshal(respBody, &errEnv)
+		// In local dev mode, mock credential errors so testing doesn't require valid Meta credentials.
+		isLocalDev := os.Getenv("API_ENV") == "local"
+		if isLocalDev && (resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusUnauthorized || errEnv.Error.Code == 190 || errEnv.Error.Code == 131005) {
+			return &SendResult{
+				ExternalID: "wamid-mock-" + time.Now().Format("20060102150405"),
+			}, nil
+		}
 		if errEnv.Error.Message != "" {
 			if resp.StatusCode == http.StatusUnauthorized || errEnv.Error.Code == 190 {
 				return nil, fmt.Errorf("%w: meta whatsapp auth failed: HTTP %d %s (code=%d, type=%s)",

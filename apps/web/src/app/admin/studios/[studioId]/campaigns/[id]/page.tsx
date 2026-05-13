@@ -32,17 +32,25 @@ export default async function CampaignDetailPage({
 
   return (
     <>
-      <PageHeader
-        title={c.name}
-        description={
-          <>
-            <span className="font-mono text-xs text-slate-400">/{c.slug}</span>
-            <span className="mx-2 text-slate-300">·</span>
-            Created {formatDate(c.createdAt)}
-          </>
-        }
-        actions={<CampaignActions studioId={studioId} id={c.id} active={c.active} />}
-      />
+    <div className="space-y-6">
+      {/* Premium Campaign Detail Header Box */}
+      <div className="relative overflow-hidden rounded-[32px] border border-white bg-white/70 p-6 shadow-xl shadow-slate-200/50 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/70">
+        <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-brand-500/5 blur-3xl" />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{c.name}</h1>
+              <Badge tone={c.active ? 'success' : 'neutral'} className="rounded-xl px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest shadow-sm">
+                {c.active ? 'Active' : 'Inactive'}
+              </Badge>
+            </div>
+            <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">
+              <span className="font-mono text-xs">/{c.slug}</span> · Created {formatDate(c.createdAt)}
+            </p>
+          </div>
+          <CampaignActions studioId={studioId} id={c.id} active={c.active} />
+        </div>
+      </div>
 
       <div className="space-y-6">
         <Card title="Share link" subtitle="Drop this URL in your Instagram bio, story, or ad.">
@@ -149,6 +157,6 @@ export default async function CampaignDetailPage({
           )}
         </Card>
       </div>
-    </>
+    </div>
   );
 }
