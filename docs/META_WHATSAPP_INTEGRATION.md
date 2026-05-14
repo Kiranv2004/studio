@@ -102,7 +102,63 @@ After verification, Meta updates your phone number in the system. You can then:
 
 ---
 
+## Local Development with ngrok (Receiving Messages)
+
+To receive messages from clients during local development, you need to expose your local server to the internet using ngrok and configure Meta webhooks.
+
+### Step 1: Start your website/backend
+Make sure your Next.js app is running locally (e.g., `localhost:3000`).
+
+### Step 2: Start ngrok
+Run ngrok for your app port (3000):
+```bash
+ngrok http 3000
+```
+After starting, you’ll get your public URL (e.g., `https://recreate-gout-blizzard.ngrok-free.dev`). **Keep ngrok running.**
+
+### Step 3: Open Meta Developer Portal
+Go to [Meta for Developers](https://developers.facebook.com/) and open your app.
+
+### Step 4: Open WhatsApp settings
+Inside Meta: **Your App → WhatsApp → Configuration**
+
+### Step 5: Add webhook
+In the **Webhook** section, click **Edit** and enter:
+- **Callback URL**: `https://your-ngrok-url.ngrok-free.dev/api/v1/webhooks/meta/whatsapp`
+- **Verify Token**: Use the same verify token your project/backend uses (e.g., `my_secret_token_123`).
+
+Click **Verify and Save**.
+
+### Step 6: Subscribe to message events
+Still in Meta Configuration:
+1. Click **Manage** (Webhook fields).
+2. Enable: ✅ **messages**
+3. Click **Done**.
+
+> [!IMPORTANT]
+> This is critical—without this, Meta won’t send client messages to your server.
+
+### Step 7: Check app mode
+Make sure your Meta app is set to ✅ **Live mode**.
+> [!NOTE]
+> If it is still in **Development mode**, only admins and testers can send messages.
+
+### Step 8: Test with client
+Ask your client (or use your own phone) to send a WhatsApp message to your connected business number.
+Example: *Hi*
+
+### Step 9: Check your inbox
+Open your inbox page: `localhost:3000/admin/studios/.../inbox`
+
+If everything is correct, the client’s message should appear there.
+
+**The Communication Flow:**
+`Client sends WhatsApp message` → `Meta` → `ngrok URL` → `Your app inbox`
+
+---
+
 ## Testing the Connection
+
 
 Once connected, you can:
 

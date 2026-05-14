@@ -94,28 +94,24 @@ export function AppShell({ me, children }: { me: Me; children: ReactNode }) {
 
   return (
     <div
-      className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100"
+      className="min-h-screen text-zinc-900 dark:text-zinc-100"
       style={themeStyle}
     >
       {/* Mobile backdrop */}
       <div
         className={cn(
-          'fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-sm transition-opacity lg:hidden',
+          'fixed inset-0 z-40 bg-neutral-950/40 backdrop-blur-md transition-opacity lg:hidden',
           mobileOpen ? 'opacity-100' : 'pointer-events-none opacity-0',
         )}
         onClick={() => setMobileOpen(false)}
         aria-hidden
       />
 
-      <div className="lg:flex">
+      <div className="lg:flex lg:h-screen lg:gap-4 lg:p-4">
         <Sidebar me={me} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden lg:glass-container">
           <Topbar me={me} onMenuClick={() => setMobileOpen(true)} />
-          <main className="relative flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
-            <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-              <div className="absolute -left-[10%] -top-[10%] h-[40%] w-[40%] rounded-full bg-brand-500/5 blur-[120px] animate-pulse-soft" />
-              <div className="absolute -bottom-[10%] -right-[10%] h-[40%] w-[40%] rounded-full bg-sky-500/5 blur-[120px] animate-pulse-soft" style={{ animationDelay: '1.5s' }} />
-            </div>
+          <main className="relative flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
             {children}
           </main>
         </div>
@@ -142,11 +138,11 @@ function Sidebar({
     <aside
       className={cn(
         // Mobile: fixed drawer that slides in from the left
-        'fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-200 bg-white/80 px-4 py-5 backdrop-blur-xl transition-all duration-300 ease-out',
-        'dark:border-slate-800 dark:bg-slate-950/80',
+        'fixed inset-y-4 left-4 z-50 flex w-72 flex-col overflow-hidden rounded-[32px] border border-white/40 bg-white/40 px-4 py-6 backdrop-blur-3xl transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]',
+        'dark:border-white/10 dark:bg-neutral-900/40',
         // Desktop: sticky in flow, always visible
-        'lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:w-64 lg:translate-x-0 lg:shadow-none lg:transition-all',
-        mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full',
+        'lg:relative lg:inset-y-0 lg:left-0 lg:z-auto lg:h-full lg:w-20 lg:translate-x-0 lg:items-center lg:rounded-[40px] lg:px-2 lg:shadow-liquid lg:transition-all hover:lg:w-64 group/sidebar',
+        mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-[calc(100%+20px)]',
       )}
       aria-label="Primary navigation"
     >
@@ -163,9 +159,9 @@ function Sidebar({
 
       {/* Brand block */}
       {isStudio ? (
-        <div className="mb-7 flex animate-in items-center gap-3" style={{ animationDelay: '100ms' }}>
+        <div className="mb-10 flex animate-in items-center gap-3 lg:flex-col lg:gap-1 group-hover/sidebar:lg:flex-row group-hover/sidebar:lg:gap-3" style={{ animationDelay: '100ms' }}>
           <div
-            className="grid h-12 w-12 shrink-0 animate-float place-items-center overflow-hidden rounded-2xl text-sm font-bold text-white shadow-lg shadow-brand-500/20 ring-4 ring-[var(--brand-soft)]"
+            className="grid h-12 w-12 shrink-0 animate-float place-items-center overflow-hidden rounded-2xl text-sm font-bold text-white shadow-lg shadow-brand-500/20 ring-4 ring-white/30"
             style={{ background: studio!.brandColor }}
           >
             {studio!.logoUrl ? (
@@ -175,31 +171,31 @@ function Sidebar({
               brandInitials(studio!.name)
             )}
           </div>
-          <div className="min-w-0">
-            <div className="truncate text-base font-bold text-slate-900 dark:text-slate-100">
+          <div className="min-w-0 lg:hidden group-hover/sidebar:lg:block">
+            <div className="truncate text-sm font-bold text-zinc-900 dark:text-zinc-100">
               {studio!.name}
             </div>
-            <div className="truncate font-mono text-[11px] font-medium text-slate-500">
+            <div className="truncate font-mono text-[10px] font-medium text-zinc-500">
               /{studio!.slug}
             </div>
           </div>
         </div>
       ) : (
-        <div className="mb-7 flex animate-in items-center gap-3" style={{ animationDelay: '100ms' }}>
-          <div className="grid h-12 w-12 shrink-0 animate-float place-items-center rounded-2xl bg-gradient-to-br from-brand-300 via-brand-primary to-brand-700 text-sm font-extrabold text-white shadow-lg shadow-brand-500/20 ring-4 ring-brand-100 dark:ring-brand-900/30">
+        <div className="mb-10 flex animate-in items-center gap-3 lg:flex-col lg:gap-1 group-hover/sidebar:lg:flex-row group-hover/sidebar:lg:gap-3" style={{ animationDelay: '100ms' }}>
+          <div className="grid h-12 w-12 shrink-0 animate-float place-items-center rounded-2xl bg-gradient-to-br from-brand-300 via-brand-primary to-brand-700 text-sm font-extrabold text-white shadow-lg shadow-brand-500/20 ring-4 ring-white/30">
             1H
           </div>
-          <div className="min-w-0">
-            <div className="truncate text-base font-bold text-slate-900 dark:text-slate-100">
+          <div className="min-w-0 lg:hidden group-hover/sidebar:lg:block">
+            <div className="truncate text-sm font-bold text-zinc-900 dark:text-zinc-100">
               1herosocial.ai
             </div>
-            <div className="text-[11px] font-medium text-slate-500">Platform admin</div>
+            <div className="text-[10px] font-medium text-zinc-500">Platform admin</div>
           </div>
         </div>
       )}
 
       {/* Nav */}
-      <nav className="flex flex-1 flex-col gap-1.5 overflow-y-auto">
+      <nav className="flex flex-1 flex-col gap-3 overflow-y-auto lg:w-full lg:items-center group-hover/sidebar:lg:items-stretch">
         {items.map((item, idx) => {
           const active = item.match ? item.match(pathname) : pathname === item.href;
           return (
@@ -207,32 +203,33 @@ function Sidebar({
               key={item.href}
               href={item.href}
               className={cn(
-                'group flex animate-in items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300',
+                'group flex animate-in items-center gap-3 rounded-[20px] px-3 py-3 text-sm font-semibold transition-all duration-300',
                 active
-                  ? 'text-[color:var(--brand)] shadow-sm'
-                  : 'text-slate-600 hover:bg-slate-100/50 hover:text-slate-900 hover:pl-4 dark:text-slate-400 dark:hover:bg-slate-800/50 dark:hover:text-slate-100',
+                  ? 'text-white shadow-lg'
+                  : 'text-zinc-500 hover:bg-white/50 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-zinc-100',
+                'lg:justify-center group-hover/sidebar:lg:justify-start',
               )}
               style={{
                 animationDelay: `${150 + idx * 50}ms`,
-                ...(active ? { background: 'var(--brand-soft)', color: 'var(--brand)' } : {}),
+                ...(active ? { background: 'linear-gradient(135deg, var(--brand) 0%, #a78bfa 100%)', boxShadow: '0 8px 16px -4px rgba(124, 58, 237, 0.3)' } : {}),
               }}
             >
-              <span className={cn('shrink-0 transition-all duration-300 group-hover:scale-125 group-hover:rotate-12', active && '[&>svg]:stroke-[2.5]')}>
+              <span className={cn('shrink-0 transition-all duration-500 group-hover:scale-125', active && '[&>svg]:stroke-[2.5]')}>
                 {item.icon}
               </span>
-              <span className="truncate">{item.label}</span>
+              <span className="truncate lg:hidden group-hover/sidebar:lg:block">{item.label}</span>
             </Link>
           );
         })}
       </nav>
 
       {/* Footer hint */}
-      <div className="mt-6 animate-in rounded-2xl border border-slate-200 bg-slate-50/50 p-4 text-xs text-slate-500 backdrop-blur-sm dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-400" style={{ animationDelay: '500ms' }}>
-        <div className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
+      <div className="mt-6 animate-in rounded-3xl border border-white/20 bg-white/20 p-4 text-xs text-zinc-500 backdrop-blur-md dark:border-white/5 dark:bg-black/20 lg:hidden group-hover/sidebar:lg:block" style={{ animationDelay: '500ms' }}>
+        <div className="flex items-center gap-2 font-black text-zinc-800 dark:text-zinc-200">
           <Sparkles className="h-3.5 w-3.5 text-brand-500" />
           Tip
         </div>
-        <p className="mt-1.5 leading-relaxed">
+        <p className="mt-1.5 leading-relaxed font-medium">
           {isStudio
             ? 'Drop your campaign link in your Instagram bio to start collecting leads.'
             : 'Studios sign in at the same /login URL — their account routes them to their own dashboard.'}
@@ -256,7 +253,7 @@ function Topbar({ me, onMenuClick }: { me: Me; onMenuClick: () => void }) {
   }
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-slate-200 bg-white/70 px-4 backdrop-blur-xl sm:px-6 lg:justify-end lg:px-10 dark:border-slate-800 dark:bg-slate-950/70">
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-3 border-b border-white/10 bg-white/40 px-4 backdrop-blur-xl sm:px-6 lg:justify-end lg:px-10 dark:bg-neutral-950/40">
       {/* Mobile menu button */}
       <button
         type="button"

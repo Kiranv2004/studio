@@ -65,6 +65,7 @@ func (s *Service) DisconnectChannel(ctx context.Context, studioID, id uuid.UUID)
 }
 
 type CreateConversationInput struct {
+	ChannelKind  ChannelKind
 	ContactValue string
 	DisplayName  string
 }
@@ -78,7 +79,7 @@ func (s *Service) CreateConversation(ctx context.Context, studioID uuid.UUID, in
 		return nil, errors.New("contactValue is required")
 	}
 
-	channel, err := s.repo.GetActiveChannelByStudio(ctx, studioID)
+	channel, err := s.repo.GetActiveChannelByKind(ctx, studioID, in.ChannelKind)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +94,14 @@ func (s *Service) CreateConversation(ctx context.Context, studioID uuid.UUID, in
 		in.DisplayName = in.ContactValue
 	}
 
-	identity, err := s.repo.FindOrCreateIdentity(ctx, tx, studioID, IdentityPhone, in.ContactValue, in.DisplayName)
+	idKind := IdentityPhone
+	if in.ChannelKind == KindMessengerMeta {
+		idKind = IdentityFBPSID
+	} else if in.ChannelKind == KindInstagramMeta {
+		idKind = IdentityIGPSID
+	}
+
+	identity, err := s.repo.FindOrCreateIdentity(ctx, tx, studioID, idKind, in.ContactValue, in.DisplayName)
 	if err != nil {
 		return nil, err
 	}
@@ -242,6 +250,7 @@ func (s *Service) HandleInboundMessaging(ctx context.Context, kind ChannelKind, 
 	}
 
 	// 1. Resolve the channel account by the recipient's ID (the IG Account or FB Page PSID).
+	fmt.Printf("DEBUG: HandleInboundMessaging: kind=%s, recipientID=%s, senderID=%s\n", kind, m.Recipient.ID, m.Sender.ID)
 	channel, err := s.repo.GetChannelByExternalID(ctx, kind, m.Recipient.ID)
 	if err != nil {
 		// Log the mismatch so we can debug.

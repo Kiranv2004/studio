@@ -6,6 +6,7 @@ import (
 	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -62,6 +63,7 @@ func (h *MetaWebhookHandler) Verify(w http.ResponseWriter, r *http.Request) {
 // We always 200 to Meta even on internal errors so they don't retry forever
 // (errors are logged on our side).
 func (h *MetaWebhookHandler) Receive(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("DEBUG: MetaWebhookHandler.Receive received POST request\n")
 	log := logger.FromCtx(r.Context(), h.log).With("webhook", "meta_messaging")
 
 	body, err := io.ReadAll(io.LimitReader(r.Body, 5<<20)) // 5 MB cap

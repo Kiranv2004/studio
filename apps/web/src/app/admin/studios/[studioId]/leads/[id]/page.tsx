@@ -1,6 +1,6 @@
-import Link from 'next/link';
+import { User, ArrowLeft } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
-import { PageHeader } from '@/components/ui/PageHeader';
+import { Button } from '@/components/ui/Button';
 import { serverFetch } from '@/lib/auth';
 import { formatDateTime } from '@/lib/datetime';
 import type { Lead } from '@/lib/types';
@@ -16,26 +16,36 @@ export default async function LeadDetailPage({
 
   return (
     <div className="space-y-6">
-      {/* Premium Lead Detail Header Box */}
-      <div className="relative overflow-hidden rounded-[32px] border border-white bg-white/70 p-6 shadow-xl shadow-slate-200/50 backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/70">
-        <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-brand-500/5 blur-3xl" />
+      {/* Premium Glass Header */}
+      <div
+        className="relative overflow-hidden rounded-[26px] border border-white/30 p-6 backdrop-blur-2xl dark:border-white/5"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.30) 0%, rgba(237,233,254,0.22) 60%, rgba(219,234,254,0.20) 100%)',
+          boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.2), 0 8px 32px rgba(139,92,246,0.07)',
+        }}
+      >
+        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-brand-500/10 blur-[70px]" />
+        
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-lg font-black text-white shadow-lg">
-              {lead.name.charAt(0).toUpperCase()}
+            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-violet-600 text-white shadow-lg shadow-brand-500/25">
+              <User className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">{lead.name}</h1>
-              <p className="mt-1 text-sm font-medium text-slate-500 dark:text-slate-400">
-                Lead captured from <span className="font-bold text-brand-600 dark:text-brand-400">{lead.campaignName ?? lead.campaignId}</span> · {formatDateTime(lead.createdAt)}
+              <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-white">{lead.name}</h1>
+              <p className="mt-0.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                From <span className="font-bold text-brand-600 dark:text-brand-400">{lead.campaignName ?? lead.campaignId}</span> · {formatDateTime(lead.createdAt)}
               </p>
             </div>
           </div>
-          <Link
-            href={`/admin/studios/${studioId}/leads`}
-            className="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-4 py-2 text-xs font-bold text-slate-600 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700"
-          >
-            &larr; Back to Leads
+          <Link href={`/admin/studios/${studioId}/leads`}>
+            <Button
+              variant="secondary"
+              leftIcon={<ArrowLeft className="h-4 w-4" />}
+              suppressHydrationWarning
+            >
+              Back to Leads
+            </Button>
           </Link>
         </div>
       </div>
@@ -64,10 +74,10 @@ export default async function LeadDetailPage({
 function Field({ label, value, className }: { label: string; value: string; className?: string }) {
   return (
     <div className={className}>
-      <dt className="text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
+      <dt className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-400">
         {label}
       </dt>
-      <dd className="mt-1.5 break-words text-slate-900 dark:text-slate-100">{value || '—'}</dd>
+      <dd className="mt-1.5 break-words font-semibold text-zinc-900 dark:text-zinc-100">{value || '—'}</dd>
     </div>
   );
 }

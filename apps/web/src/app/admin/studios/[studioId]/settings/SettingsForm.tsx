@@ -50,8 +50,11 @@ export function SettingsForm({ studio }: { studio: Studio }) {
   return (
     <div className="grid gap-6 md:grid-cols-3">
       <div className="md:col-span-2">
-        <Card title="Identity">
-          <form onSubmit={onSubmit} className="space-y-5">
+        <div className="overflow-hidden rounded-[24px] border border-white/30 bg-white/30 backdrop-blur-2xl dark:border-white/5 dark:bg-neutral-900/30" style={{ boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.15), 0 4px 16px rgba(0,0,0,0.05)' }}>
+          <div className="border-b border-white/20 px-6 py-4 dark:border-white/5">
+            <h3 className="text-sm font-black uppercase tracking-[0.15em] text-zinc-400">Identity</h3>
+          </div>
+          <form onSubmit={onSubmit} className="space-y-5 p-6">
             <div>
               <Label htmlFor="name">Studio name</Label>
               <Input
@@ -130,11 +133,15 @@ export function SettingsForm({ studio }: { studio: Studio }) {
               <Button type="submit" loading={saving}>Save & back</Button>
             </div>
           </form>
-        </Card>
+        </div>
       </div>
 
       <div>
-        <Card title="Live preview">
+        <div className="overflow-hidden rounded-[24px] border border-white/30 bg-white/30 backdrop-blur-2xl dark:border-white/5 dark:bg-neutral-900/30" style={{ boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.15), 0 4px 16px rgba(0,0,0,0.05)' }}>
+          <div className="border-b border-white/20 px-6 py-4 dark:border-white/5">
+            <h3 className="text-sm font-black uppercase tracking-[0.15em] text-zinc-400">Live Preview</h3>
+          </div>
+          <div className="p-6">
           <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900/40">
             <div className="flex items-center gap-3">
               <span
@@ -167,7 +174,8 @@ export function SettingsForm({ studio }: { studio: Studio }) {
           <FieldHint>
             Slug is fixed (renaming would break shared links). Ask the platform admin if you need it changed.
           </FieldHint>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );

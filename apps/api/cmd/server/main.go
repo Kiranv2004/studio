@@ -126,9 +126,18 @@ func main() {
 		studiosHandler.PublicRoutes(r)
 		leadsHandler.PublicRoutes(r)
 
-		// Meta webhook (verified by signature, never auth-cookied)
+		// Meta webhooks (WA, FB, IG)
+		// We provide separate URLs for clarity, though the handler logic handles all types.
 		r.Get("/webhooks/meta/whatsapp", metaWebhook.Verify)
 		r.Post("/webhooks/meta/whatsapp", metaWebhook.Receive)
+
+		r.Get("/webhooks/meta/messenger", metaWebhook.Verify)
+		r.Get("/webhooks/meta/messenger/", metaWebhook.Verify)
+		r.Post("/webhooks/meta/messenger", metaWebhook.Receive)
+		r.Post("/webhooks/meta/messenger/", metaWebhook.Receive)
+
+		r.Get("/webhooks/meta/instagram", metaWebhook.Verify)
+		r.Post("/webhooks/meta/instagram", metaWebhook.Receive)
 
 		// Authenticated
 		r.Group(func(r chi.Router) {

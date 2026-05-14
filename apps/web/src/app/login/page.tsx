@@ -56,79 +56,91 @@ export default function LoginPage() {
     : {};
 
   return (
-    <main className="min-h-screen w-full bg-slate-50 text-slate-900 transition-all duration-700 dark:bg-slate-950" style={themeStyle}>
+    <main
+      className="min-h-screen w-full text-zinc-900 transition-all duration-700 dark:text-zinc-100"
+      style={{
+        ...themeStyle,
+        background: 'rgb(248, 250, 255)',
+      }}
+    >
       <div className="grid min-h-screen w-full grid-cols-1 lg:grid-cols-[1.1fr,1fr] xl:grid-cols-[1.2fr,1fr]">
         {/* Hero */}
-        <section className="relative hidden overflow-hidden bg-slate-950 text-white lg:flex lg:flex-col lg:justify-between lg:px-12 lg:py-12 xl:px-16">
-          {/* Animated Background Gradients */}
+        <section className="relative hidden overflow-hidden bg-neutral-950 text-white lg:flex lg:flex-col lg:justify-between lg:px-12 lg:py-12 xl:px-16">
+          {/* Animated Background Image - Left Side Only */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 opacity-30"
+            className="pointer-events-none absolute inset-0 opacity-50"
             style={{
-              background:
-                'radial-gradient(circle at 15% 0%, rgba(124,58,237,0.8) 0%, transparent 50%), radial-gradient(circle at 85% 90%, rgba(14,165,233,0.7) 0%, transparent 50%)',
+              backgroundImage: 'linear-gradient(to right, rgba(10, 10, 11, 0.2) 0%, rgba(10, 10, 11, 0.8) 100%), url("/platform-bg.png")',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
             }}
           />
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.02] brightness-100 contrast-150" />
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.03] brightness-100 contrast-150" />
           
           {/* Floating visual elements */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <Building2 className="absolute -left-10 top-1/4 h-32 w-32 animate-float text-white/10 blur-sm" style={{ animationDelay: '0s' }} />
-            <Inbox className="absolute -right-10 top-1/2 h-40 w-40 animate-float text-white/10 blur-md" style={{ animationDelay: '2s' }} />
-            <Sparkles className="absolute left-1/3 top-3/4 h-24 w-24 animate-float text-white/10 blur-sm" style={{ animationDelay: '4s' }} />
+            <div className="absolute -left-[10%] top-[20%] h-[40%] w-[40%] rounded-full bg-brand-500/15 blur-[120px] animate-pulse-liquid" />
+            <div className="absolute -right-[10%] top-[50%] h-[40%] w-[40%] rounded-full bg-sky-500/10 blur-[120px] animate-pulse-liquid" style={{ animationDelay: '3s' }} />
           </div>
 
           <div className="relative">
-            <div className="flex animate-in items-center gap-3" style={{ animationDelay: '100ms' }}>
-              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 via-brand-primary to-brand-700 text-sm font-black text-white shadow-2xl shadow-brand-500/40 ring-1 ring-white/30">
+            <div className="flex animate-in items-center gap-4" style={{ animationDelay: '100ms' }}>
+              <div className="grid h-14 w-14 place-items-center rounded-3xl bg-gradient-to-br from-brand-400 via-brand-primary to-brand-700 text-lg font-black text-white shadow-2xl shadow-brand-500/40 ring-2 ring-white/10">
                 1H
               </div>
-              <div className="text-xl font-extrabold tracking-tight text-white">1herosocial.ai</div>
+              <div className="text-2xl font-black tracking-tight text-white">1herosocial.ai</div>
             </div>
 
             <h1 className="mt-20 max-w-2xl animate-slide-up text-5xl font-black leading-[1.05] tracking-tight text-white xl:text-7xl" style={{ animationDelay: '200ms' }}>
               The AI-run marketing <span className="bg-gradient-to-r from-brand-300 to-sky-300 bg-clip-text text-transparent">OS</span> for fitness studios.
             </h1>
-            <p className="mt-8 max-w-lg animate-slide-up text-xl leading-relaxed text-slate-200" style={{ animationDelay: '300ms' }}>
+            <p className="mt-8 max-w-lg animate-slide-up text-xl font-medium leading-relaxed text-zinc-300" style={{ animationDelay: '300ms' }}>
               Onboard studios in minutes. Generate campaigns, capture leads in a
               shared inbox, and ship them straight into your spreadsheet.
             </p>
           </div>
 
-          <div className="relative mt-12 grid grid-cols-1 gap-4 animate-in sm:grid-cols-3" style={{ animationDelay: '400ms' }}>
+          <div className="relative mt-12 grid grid-cols-1 gap-6 animate-in sm:grid-cols-3" style={{ animationDelay: '400ms' }}>
             <Feature icon={<Building2 className="h-5 w-5" />} title="Multi-studio" body="Each studio is its own tenant with branded URLs." />
             <Feature icon={<Inbox className="h-5 w-5" />} title="Lead inbox" body="Form submissions land in Postgres + Sheets, never lost." />
             <Feature icon={<Sparkles className="h-5 w-5" />} title="Per-studio brand" body="Each studio's color and logo render on the public form." />
           </div>
         </section>
 
-        {/* Form */}
-        <section className="relative flex items-center justify-center bg-white px-6 py-12 sm:px-10 lg:bg-transparent lg:px-12 xl:px-16 dark:bg-slate-950">
-          <div className="absolute inset-0 -z-10 hidden lg:block">
-            <div className="absolute left-1/4 top-1/4 h-64 w-64 rounded-full bg-brand-500/5 blur-[100px] animate-pulse-soft" />
-            <div className="absolute bottom-1/4 right-1/4 h-64 w-64 rounded-full bg-sky-500/5 blur-[100px] animate-pulse-soft" style={{ animationDelay: '2s' }} />
+        {/* Form - Right Side with Rich Professional Gradient */}
+        <section 
+          className="relative flex items-center justify-center px-6 py-12 sm:px-10 lg:px-12 xl:px-16"
+          style={{
+            background: 'linear-gradient(135deg, #f3f0ff 0%, #e0e7ff 50%, #dbeafe 100%)',
+          }}
+        >
+          {/* Enhanced Ambient Glows for Right Side */}
+          <div className="absolute inset-0 -z-10 overflow-hidden">
+            <div className="absolute left-[-20%] top-[-10%] h-[80%] w-[80%] rounded-full bg-violet-400/20 blur-[120px] animate-pulse-liquid" />
+            <div className="absolute bottom-[-20%] right-[-10%] h-[80%] w-[80%] rounded-full bg-sky-400/20 blur-[120px] animate-pulse-liquid" style={{ animationDelay: '2s' }} />
           </div>
 
           <div className="w-full max-w-md animate-in" style={{ animationDelay: '500ms' }}>
-            <div className="mb-10 flex items-center gap-3 lg:hidden">
-              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 via-brand-primary to-brand-700 text-sm font-black text-white shadow-xl ring-1 ring-white/20">
+            <div className="mb-12 flex items-center gap-4 lg:hidden">
+              <div className="grid h-14 w-14 place-items-center rounded-3xl bg-gradient-to-br from-brand-400 via-brand-primary to-brand-700 text-lg font-black text-white shadow-xl ring-2 ring-white/10">
                 1H
               </div>
-              <div className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">1herosocial.ai</div>
+              <div className="text-2xl font-black tracking-tight text-zinc-900 dark:text-white">1herosocial.ai</div>
             </div>
 
-            <Card className="border-none bg-white/40 shadow-2xl shadow-slate-200/50 backdrop-blur-xl dark:bg-slate-900/40 dark:shadow-none" noPadding>
-              <div className="p-8 sm:p-10">
-                <div className="mb-10">
-                  <h2 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">Welcome back</h2>
-                  <p className="mt-3 text-base text-slate-500 dark:text-slate-400">
+            <div className="glass-container p-1 sm:p-1">
+              <div className="rounded-[40px] bg-white/40 p-10 backdrop-blur-3xl dark:bg-neutral-900/40 sm:p-12">
+                <div className="mb-10 text-center">
+                  <h2 className="text-4xl font-black tracking-tight text-zinc-900 dark:text-white">Welcome back</h2>
+                  <p className="mt-4 text-base font-medium text-zinc-500 dark:text-zinc-400">
                     Sign in to manage your fitness studio operations.
                   </p>
                 </div>
 
                 <form onSubmit={onSubmit} className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="ml-1 text-[11px] font-black uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">Email Address</Label>
+                  <div className="space-y-2.5">
+                    <Label htmlFor="email" className="ml-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">Email Address</Label>
                     <Input
                       id="email"
                       type="email"
@@ -137,13 +149,13 @@ export default function LoginPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@example.com"
-                      className="h-14 border-slate-200/60 bg-white/50 px-4 text-base focus-visible:ring-offset-0 dark:border-slate-800/60 dark:bg-slate-950/50"
+                      className="h-14 rounded-[20px] border-white/20 bg-white/50 px-5 text-base shadow-sm backdrop-blur-md focus-visible:ring-offset-0 dark:border-white/5 dark:bg-black/20"
                       suppressHydrationWarning
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     <div className="flex items-center justify-between px-1">
-                      <Label htmlFor="password" className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-400 dark:text-slate-500">Password</Label>
+                      <Label htmlFor="password" className="ml-2 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">Password</Label>
                     </div>
                     <Input
                       id="password"
@@ -153,32 +165,32 @@ export default function LoginPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="h-14 border-slate-200/60 bg-white/50 px-4 text-base focus-visible:ring-offset-0 dark:border-slate-800/60 dark:bg-slate-950/50"
+                      className="h-14 rounded-[20px] border-white/20 bg-white/50 px-5 text-base shadow-sm backdrop-blur-md focus-visible:ring-offset-0 dark:border-white/5 dark:bg-black/20"
                       suppressHydrationWarning
                     />
                   </div>
                   <FieldError message={error ?? undefined} />
                   <Button
                     type="submit"
-                    className="h-14 w-full text-base font-bold shadow-xl shadow-brand-500/25"
+                    className="h-14 w-full rounded-[24px] text-lg font-black shadow-2xl shadow-brand-500/25"
                     size="lg"
                     loading={submitting}
-                    rightIcon={<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />}
+                    rightIcon={<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-2" />}
                     suppressHydrationWarning
                   >
                     Sign in
                   </Button>
                 </form>
 
-                <div className="mt-10 flex items-center gap-4 text-[11px] font-medium text-slate-400 dark:text-slate-500">
-                  <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800/60" />
-                  <span>SECURE ACCESS</span>
-                  <div className="h-px flex-1 bg-slate-100 dark:bg-slate-800/60" />
+                <div className="mt-12 flex items-center gap-4 text-[10px] font-black text-zinc-400 dark:text-zinc-500">
+                  <div className="h-px flex-1 bg-zinc-100 dark:bg-white/5" />
+                  <span className="tracking-[0.2em]">SECURE ACCESS</span>
+                  <div className="h-px flex-1 bg-zinc-100 dark:bg-white/5" />
                 </div>
               </div>
-            </Card>
+            </div>
 
-            <p className="mt-8 text-center text-xs font-medium text-slate-400 dark:text-slate-500">
+            <p className="mt-8 text-center text-xs font-bold text-zinc-400 dark:text-zinc-500">
               Platform admins and studio managers sign in here.
             </p>
           </div>
