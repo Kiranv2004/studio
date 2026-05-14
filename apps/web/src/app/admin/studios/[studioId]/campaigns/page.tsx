@@ -24,17 +24,39 @@ export default async function CampaignsPage({
 
   return (
     <div className="space-y-8">
-      <PageHeader
-        title="Campaigns"
-        description="Each campaign generates a unique lead-capture link you can drop in an Instagram bio or ad."
-        actions={
+      {/* Premium Glass Header */}
+      <div
+        className="relative overflow-hidden rounded-[26px] border border-white/30 p-6 backdrop-blur-2xl dark:border-white/5"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.30) 0%, rgba(237,233,254,0.22) 60%, rgba(219,234,254,0.20) 100%)',
+          boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.2), 0 8px 32px rgba(139,92,246,0.07)',
+        }}
+      >
+        <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-brand-500/10 blur-[70px]" />
+        
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-violet-600 text-white shadow-lg shadow-brand-500/25">
+              <Megaphone className="h-6 w-6" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-white">Campaigns</h1>
+              <p className="mt-0.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                Each campaign generates a unique lead-capture link you can drop in an Instagram bio or ad.
+              </p>
+            </div>
+          </div>
           <Link href={`/admin/studios/${studioId}/campaigns/new`}>
-            <Button leftIcon={<Plus className="h-4 w-4" />} className="shadow-lg shadow-brand-500/20" suppressHydrationWarning>
-              New campaign
+            <Button
+              leftIcon={<Plus className="h-4 w-4" />}
+              className="shadow-lg shadow-brand-500/20"
+              suppressHydrationWarning
+            >
+              New Campaign
             </Button>
           </Link>
-        }
-      />
+        </div>
+      </div>
 
       {campaigns.length === 0 ? (
         <Card className="border-none bg-white/40 backdrop-blur-xl dark:bg-slate-900/40">
@@ -57,13 +79,13 @@ export default async function CampaignsPage({
           
           <Link 
             href={`/admin/studios/${studioId}/campaigns/new`}
-            className="group flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-slate-200 bg-white/30 p-8 transition-all hover:border-brand-500/50 hover:bg-white/50 dark:border-slate-800 dark:bg-slate-900/10 dark:hover:border-brand-500/30 dark:hover:bg-slate-900/30"
+            className="group flex flex-col items-center justify-center rounded-[32px] border-2 border-dashed border-white/20 bg-white/10 p-8 transition-all hover:border-brand-500/50 hover:bg-white/20 dark:border-white/5 dark:bg-white/5 dark:hover:bg-white/10"
           >
-            <div className="mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 transition-transform group-hover:scale-110 dark:bg-slate-900 dark:ring-slate-800">
-              <Plus className="h-6 w-6 text-brand-500" />
+            <div className="mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-white/80 shadow-lg backdrop-blur-md transition-transform group-hover:scale-110 dark:bg-white/10">
+              <Plus className="h-8 w-8 text-brand-500" />
             </div>
-            <span className="text-sm font-bold text-slate-900 dark:text-slate-100">Create New Campaign</span>
-            <span className="mt-1 text-xs text-slate-500">Add another lead magnet</span>
+            <span className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Create New Campaign</span>
+            <span className="mt-1 text-xs text-zinc-500">Add another lead magnet</span>
           </Link>
         </div>
       )}
@@ -79,10 +101,10 @@ function CampaignCard({ campaign, studioId, index }: { campaign: Campaign, studi
       className="group relative animate-in"
       style={{ animationDelay: delay }}
     >
-      <div className="absolute -inset-0.5 rounded-[32px] bg-gradient-to-br from-brand-500/20 to-sky-500/20 opacity-0 blur transition duration-500 group-hover:opacity-100" />
+      <div className="absolute -inset-1 rounded-[36px] bg-gradient-to-br from-brand-500/20 to-sky-500/20 opacity-0 blur-xl transition duration-500 group-hover:opacity-100" />
       
-      <Card className="relative h-full border-none bg-white/60 shadow-2xl shadow-slate-200/50 backdrop-blur-xl dark:bg-slate-900/60 dark:shadow-none" noPadding>
-        <div className="flex h-full flex-col p-6">
+      <Card className="relative h-full border-none bg-white/40 shadow-xl backdrop-blur-2xl dark:bg-neutral-900/40" noPadding elevated>
+        <div className="flex h-full flex-col p-8">
           <div className="mb-6 flex items-start justify-between">
             <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-500 to-brand-600 text-white shadow-lg shadow-brand-500/20">
               <Zap className="h-6 w-6" />
@@ -109,22 +131,22 @@ function CampaignCard({ campaign, studioId, index }: { campaign: Campaign, studi
             {campaign.description || "Start collecting leads with this premium capture form."}
           </p>
 
-          <div className="mb-6 grid grid-cols-2 gap-4">
-            <div className="rounded-2xl bg-slate-100/50 p-3 dark:bg-slate-800/50">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                <Users className="h-3 w-3" />
+          <div className="mb-8 grid grid-cols-2 gap-4">
+            <div className="rounded-3xl bg-white/40 p-4 backdrop-blur-md dark:bg-white/5">
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-zinc-400">
+                <Users className="h-3.5 w-3.5" />
                 Leads
               </div>
-              <div className="mt-1 text-lg font-black text-slate-900 dark:text-white">
+              <div className="mt-1 text-2xl font-black text-zinc-900 dark:text-white">
                 {campaign.leadCount ?? 0}
               </div>
             </div>
-            <div className="rounded-2xl bg-slate-100/50 p-3 dark:bg-slate-800/50">
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                <Zap className="h-3 w-3" />
+            <div className="rounded-3xl bg-white/40 p-4 backdrop-blur-md dark:bg-white/5">
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-wider text-zinc-400">
+                <Zap className="h-3.5 w-3.5" />
                 Plans
               </div>
-              <div className="mt-1 text-lg font-black text-slate-900 dark:text-white">
+              <div className="mt-1 text-2xl font-black text-zinc-900 dark:text-white">
                 {campaign.fitnessPlans.length}
               </div>
             </div>

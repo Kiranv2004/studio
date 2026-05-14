@@ -181,6 +181,12 @@ func (h *Handler) listConversations(w http.ResponseWriter, r *http.Request) {
 		n, _ := strconv.Atoi(v)
 		f.Limit = n
 	}
+	if v := q.Get("channelKind"); v != "" {
+		k := ChannelKind(v)
+		if k.Valid() {
+			f.ChannelKind = &k
+		}
+	}
 	if v := q.Get("offset"); v != "" {
 		n, _ := strconv.Atoi(v)
 		f.Offset = n
@@ -216,8 +222,9 @@ func (h *Handler) getConversation(w http.ResponseWriter, r *http.Request) {
 }
 
 type createConversationReq struct {
-	ContactValue string `json:"contactValue"`
-	DisplayName  string `json:"displayName"`
+	ChannelKind  ChannelKind `json:"channelKind"`
+	ContactValue string      `json:"contactValue"`
+	DisplayName  string      `json:"displayName"`
 }
 
 func (h *Handler) createConversation(w http.ResponseWriter, r *http.Request) {
@@ -230,6 +237,7 @@ func (h *Handler) createConversation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	conv, err := h.svc.CreateConversation(r.Context(), studioID, CreateConversationInput{
+		ChannelKind:  req.ChannelKind,
 		ContactValue: req.ContactValue,
 		DisplayName:  req.DisplayName,
 	})
@@ -272,6 +280,8 @@ func (h *Handler) listMessages(w http.ResponseWriter, r *http.Request) {
 type sendMessageReq struct {
 	Body string `json:"body"`
 }
+
+
 
 func (h *Handler) sendMessage(w http.ResponseWriter, r *http.Request) {
 	studioID, ok := studioIDFromPath(w, r)
@@ -326,6 +336,8 @@ func (h *Handler) markRead(w http.ResponseWriter, r *http.Request) {
 // JSON-serialised messaging.Event. The browser EventSource API auto-reconnects
 // with `Last-Event-ID`, but we don't replay history server-side at L1 — clients
 // re-fetch on reconnect.
+
+
 func (h *Handler) stream(w http.ResponseWriter, r *http.Request) {
 	studioID, ok := studioIDFromPath(w, r)
 	if !ok {

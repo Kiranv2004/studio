@@ -256,9 +256,10 @@ func (r *Repo) FindOrCreateConversation(ctx context.Context, tx pgx.Tx, studioID
 }
 
 type ListConversationsFilter struct {
-	Status *ConvStatus
-	Limit  int
-	Offset int
+	Status      *ConvStatus
+	ChannelKind *ChannelKind
+	Limit       int
+	Offset      int
 }
 
 func (r *Repo) ListConversations(ctx context.Context, studioID uuid.UUID, f ListConversationsFilter) ([]Conversation, int, error) {
@@ -271,9 +272,14 @@ func (r *Repo) ListConversations(ctx context.Context, studioID uuid.UUID, f List
 		args = append(args, *f.Status)
 		cond += fmt.Sprintf(" AND c.status = $%d", len(args))
 	}
+	if f.ChannelKind != nil {
+		args = append(args, *f.ChannelKind)
+		cond += fmt.Sprintf(" AND ch.kind = $%d", len(args))
+	}
 
 	var total int
-	if err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FROM conversations c WHERE `+cond, args...).Scan(&total); err != nil {
+	countQ := `SELECT COUNT(*) FROM conversations c JOIN channel_accounts ch ON ch.id = c.channel_account_id WHERE ` + cond
+	if err := r.pool.QueryRow(ctx, countQ, args...).Scan(&total); err != nil {
 		return nil, 0, fmt.Errorf("count conversations: %w", err)
 	}
 

@@ -4,12 +4,12 @@ import { cn } from '@/lib/cn';
 export type BadgeTone = 'neutral' | 'brand' | 'success' | 'warning' | 'danger' | 'info';
 
 const tones: Record<BadgeTone, string> = {
-  neutral: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400',
-  brand:   'bg-brand-50 text-brand-700 dark:bg-brand-900/20 dark:text-brand-300 border border-brand-100 dark:border-brand-800/50',
-  success: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/50',
-  warning: 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 border border-amber-100 dark:border-amber-800/50',
-  danger:  'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border border-red-100 dark:border-red-800/50',
-  info:    'bg-sky-50 text-sky-700 dark:bg-sky-900/20 dark:text-sky-400 border border-sky-100 dark:border-sky-800/50',
+  neutral: 'bg-white/40 text-zinc-600 dark:bg-white/5 dark:text-zinc-400 border border-white/20 dark:border-white/5 backdrop-blur-md',
+  brand:   'bg-brand-500/10 text-brand-700 dark:text-brand-300 border border-brand-500/20 backdrop-blur-md',
+  success: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20 backdrop-blur-md',
+  warning: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 backdrop-blur-md',
+  danger:  'bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/20 backdrop-blur-md',
+  info:    'bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20 backdrop-blur-md',
 };
 
 export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
